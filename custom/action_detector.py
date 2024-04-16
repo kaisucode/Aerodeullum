@@ -86,6 +86,33 @@ def detectRotateSide(positions, rotations, moveThreshold=math.pi / 2):
     return False
 
 
+def getAction(positionFrames, rotationFrames): 
+
+    detectors = {
+            "detectHorizontal": { "fn": detectHorizontal, "framesToEvaluate": 40 },
+            "detectRaiseWand": { "fn": detectRaiseWand, "framesToEvaluate": 40 },
+            "detectRotateSide": { "fn": detectRotateSide, "framesToEvaluate": 10 }
+            }
+
+    curLength = len(positionFrames)
+
+    for detectorName, fn in detectors.items(): 
+
+        fn = detectors[detectorName]["fn"]
+        framesToEvaluate = detectors[detectorName]["framesToEvaluate"]
+
+        if curLength < framesToEvaluate: 
+            continue
+
+        fitsCriteria = fn(positionFrames[:framesToEvaluate], rotationFrames[:framesToEvaluate])
+
+        if fitsCriteria: 
+            message = "frame 0" + "~" + str(framesToEvaluate) + " " + detectorName
+            print(message)
+            return detectorName
+
+
+
 
 def test(filename): 
     print(filename)

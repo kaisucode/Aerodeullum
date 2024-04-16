@@ -1,8 +1,11 @@
 import numpy as np
 from blocklyTranslations import *
 
+from action_detector import *
+import queue
+
 class WandFollower(Node):
-  def __init__(self, groupState, timeHelper, max_speed=0.5, update_frequency=20, sim=True):
+  def __init__(self, groupState, timeHelper, max_speed=0.5, update_frequency=20, sim=False):
     super().__init__('wand_follower_node')
     crazyflie = groupState.crazyflies[0]
     self.timeHelper = groupState.timeHelper
@@ -24,12 +27,27 @@ class WandFollower(Node):
     self.states = []
     self.goals = []
 
+    maxQueueSize = 100
+    self.positionQueue = queue.Queue(maxSize = maxQueueSize)
+    self.rotationQueue = queue.Queue(maxSize = maxQueueSize)
+
   def timer_cb(self):
     """
     Executes every time a timer is triggered (rate based on Hz)
     """
     # Get state of wand
     wand_position, wand_rotation = self.wand_pose
+
+    # here detect whether the logs are good
+    self.positionQueue.put(wand_position)
+    self.rotationQueue.put(wand_rotation)
+
+    firstNPositions = [self.positionQueue.get() for _ in range(self.positionQueue.size())]
+    firstNRotations = [self.rotationQueue.get() for _ in range(self.rotationQueue.size())]
+
+    action = getAction(firstNPositions, firstNRotations)
+    print(action)
+
 
 
   def send_vel_cmd(self, vel):
@@ -90,7 +108,7 @@ class WandFollower(Node):
 
 
 def main():
-    sim = True
+    sim = False
     if sim:
         # Use sim version of crazyswarm
         from pycrazyswarm import Crazyswarm
