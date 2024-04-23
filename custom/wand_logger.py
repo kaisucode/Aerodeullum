@@ -17,8 +17,6 @@ class WandFollower(Node):
         super().__init__("wand_follower_node")
         self.max_speed = max_speed
         self.Hz = update_frequency
-        <self class="crazyfli"></self>e = crazyflie
-        # self.timeHelper = timeHelper
         self.wand_pose = ([0, 0, 0.25], [0, 0, 0, 1])
         self.controller = PDController(10, 0)
 
