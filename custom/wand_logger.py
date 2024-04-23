@@ -5,6 +5,11 @@ from crazyflie_py import Crazyswarm
 import rclpy
 from sensor_msgs.msg import Joy
 
+import rospy
+from std_msgs.msg import String
+
+from action_detector import *
+import queue
 
 class PDController:
     def __init__(self, Kp, Kd):
@@ -31,7 +36,7 @@ class WandFollower(Node):
         super().__init__("wand_follower_node")
         self.max_speed = max_speed
         self.Hz = update_frequency
-        # self.crazyflie = crazyflie
+        <self class="crazyfli"></self>e = crazyflie
         # self.timeHelper = timeHelper
         self.wand_pose = ([0, 0, 0.25], [0, 0, 0, 1])
         self.controller = PDController(10, 0)
@@ -41,15 +46,52 @@ class WandFollower(Node):
         )
         self.call_timer = self.create_timer(1 / self.Hz, self.timer_cb)
         # self.joy_subscriber = self.create_subscription(Joy, "joy", self.joy_callback, 1)
+        self.maxQueueSize = 50
+        self.positionQueue = []
+        self.rotationQueue = []
+
+        self.pub = rospy.Publisher("wandMovement", String, queue_size=10)
+        rospy.init_node('talker', anonymous=True)
+        self.rate = rospy.Rate(10) # 10hz
+
+
+        # self.positionQueue = queue.Queue(maxsize=self.maxQueueSize)
+        # self.rotationQueue = queue.Queue(maxsize=self.maxQueueSize)
+        # self.index = 0
 
     def timer_cb(self):
         # Get state of wand
         wand_position, wand_rotation = self.wand_pose
         # print(repr(self.wand_pose[0]))
-        np.set_printoptions(precision=3, suppress=True)
-        print(np.array2string(self.wand_pose[0], separator=","))
-        print(np.array2string(self.wand_pose[1], separator=","))
+        # np.set_printoptions(precision=3, suppress=True)
+        # print(np.array2string(self.wand_pose[0], separator=","))
+        # print(np.array2string(self.wand_pose[1], separator=","))
 
+        # here detect whether the logs are good
+        # self.positionQueue.put(wand_position)
+        # self.rotationQueue.put(wand_rotation)
+        self.positionQueue.append(wand_position)
+        self.rotationQueue.append(wand_rotation)
+        # print(wand_position)
+
+        # firstNPositions = [
+        #     self.positionQueue.get() for _ in range(self.positionQueue.qsize())
+        # ]
+        # firstNRotations = [
+        #     self.rotationQueue.get() for _ in range(self.rotationQueue.qsize())
+        # ]
+        firstNPositions = np.asarray(self.positionQueue[-self.maxQueueSize :])
+        firstNRotations = np.asarray(self.rotationQueue[-self.maxQueueSize :])
+
+        # self.index += 1
+
+        # print("attempt")
+        action = getAction(firstNPositions, firstNRotations)
+        if action != None:
+            print(action)
+            rospy.loginfo(action)
+            self.pub.publish(action)
+            rate.sleep()
         return
 
         # TODO: calculate error
