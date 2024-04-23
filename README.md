@@ -6,6 +6,18 @@
 A Large Nano-Quadcopter Swarm.
 
 
+---
+
+
+Available wand movements
+- "detectRaiseWand": initialize drones
+- "detectRotateSide": blocking/shielding
+- "detectFastAttack"
+- "detectChargedAttack"
+- "detectHorizontal": n/a
+
+---
+
 > **Warning**
 > This repository is not actively maintained anymore. For new projects, please consider [Crazyswarm2](https://imrclab.github.io/crazyswarm2/).
 

@@ -1,6 +1,6 @@
 import numpy as np
 import math
-
+import time
 
 def getData(filename):
     logfile = open(filename, "r")
@@ -54,94 +54,167 @@ def euler_from_quaternion(x, y, z, w):
 # -----
 
 
-# in the past x frames
+class ActionDetector():
 
-# detect horizontal: check x axis change only
-# detect raise wand: check y axis change only
-# detect rotate-side:  check rotation value
+    def __init__(self):
+        self.wandLowered = (False, None)
+        
 
-# detect short attack: minimal x-axis changes, distance change from starting to ending yz is signifiiicant
-# detect long attack:
+    # in the past x frames
 
+    # detect horizontal: check x axis change only
+    # detect raise wand: check y axis change only
+    # detect rotate-side:  check rotation value
 
-def detectHorizontal(positions, rotations, moveThreshold=1.5):
-    diffAcrossFrames = positions.max(axis=0) - positions.min(axis=0)
-    # print(diffAcrossFrames)
-    fitsCriteria = (
-        diffAcrossFrames[0] >= moveThreshold
-        and diffAcrossFrames[1] < moveThreshold
-        and diffAcrossFrames[2] < moveThreshold
-    )
-    # print("detect hori fit? ", fitsCriteria)
-
-    return fitsCriteria
+    # detect short attack: minimal x-axis changes, distance change from starting to ending yz is signifiiicant
+    # detect long attack:
 
 
-def detectRaiseWand(positions, rotations, moveThreshold=1.0):
-    diffAcrossFrames = positions.max(axis=0) - positions.min(axis=0)
-
-    # if np.sum(diffAcrossFrames) > 0:
-    #     print(diffAcrossFrames)
-    fitsCriteria = (
-        diffAcrossFrames[0] < moveThreshold
-        and diffAcrossFrames[1] < moveThreshold
-        and diffAcrossFrames[2] >= moveThreshold
-    )
-    # print("rais wand fit? ", fitsCriteria)
-    return fitsCriteria
-
-
-def detectRotateSide(positions, rotations, moveThreshold=90):
-
-    print(euler_from_quaternion(*rotations[0]))
-
-    # temp = euler_from_quaternion(*rotations[0])
-    diffAcrossFrames = rotations.max(axis=0) - rotations.min(axis=0)
-    fitsCriteria = (
-        diffAcrossFrames[0] < moveThreshold
-        and diffAcrossFrames[1] < moveThreshold
-        and diffAcrossFrames[2] >= moveThreshold
-    )
-    return fitsCriteria
-
-
-def getAction(positionFrames, rotationFrames):
-
-    detectors = {
-        "detectRaiseWand": {"fn": detectRaiseWand, "framesToEvaluate": 40},
-        "detectHorizontal": {"fn": detectHorizontal, "framesToEvaluate": 40},
-        "detectRotateSide": {"fn": detectRotateSide, "framesToEvaluate": 10},
-    }
-
-    curLength = len(positionFrames)
-    # print("curLength: ", curLength)
-
-    for detectorName, fn in detectors.items():
-
-        fn = detectors[detectorName]["fn"]
-        framesToEvaluate = detectors[detectorName]["framesToEvaluate"]
-        if curLength < framesToEvaluate:
-            continue
-        # print(
-        #     "detecting from ",
-        #     -framesToEvaluate,
-        #     " to ",
-        #     len(positionFrames),
-        #     " for x frames ",
-        #     len(positionFrames[-framesToEvaluate:]),
-        # )
-
-        fitsCriteria = fn(
-            positionFrames[-framesToEvaluate:], rotationFrames[-framesToEvaluate:]
+    def detectHorizontal(self, positions, rotations, moveThreshold=1.5):
+        diffAcrossFrames = positions.max(axis=0) - positions.min(axis=0)
+        # print(diffAcrossFrames)
+        fitsCriteria = (
+            diffAcrossFrames[0] >= moveThreshold
+            and diffAcrossFrames[1] < moveThreshold
+            and diffAcrossFrames[2] < moveThreshold
         )
-        # fitsCriteria = fn(
-        #    positionFrames[:framesToEvaluate], rotationFrames[:framesToEvaluate]
-        # )
+        # print("detect hori fit? ", fitsCriteria)
 
-        if fitsCriteria:
-            message = "frame 0" + "~" + str(framesToEvaluate) + " " + detectorName
-            print(message)
-            return detectorName
+        return fitsCriteria
+
+
+    def detectRaiseWand(self, positions, rotations, moveThreshold=1.0):
+        diffAcrossFrames = positions.max(axis=0) - positions.min(axis=0)
+
+        # if np.sum(diffAcrossFrames) > 0:
+        #     print(diffAcrossFrames)
+        fitsCriteria = (
+            diffAcrossFrames[0] < moveThreshold
+            and diffAcrossFrames[1] < moveThreshold
+            and diffAcrossFrames[2] >= moveThreshold
+        )
+        # print("raise wand fit? ", fitsCriteria)
+        return fitsCriteria
+
+
+    def detectRotateSide(self, positions, rotations, moveThreshold=90):
+
+        print(euler_from_quaternion(*rotations[0]))
+
+        # temp = euler_from_quaternion(*rotations[0])
+        diffAcrossFrames = rotations.max(axis=0) - rotations.min(axis=0)
+        fitsCriteria = (
+            diffAcrossFrames[0] < moveThreshold
+            and diffAcrossFrames[1] < moveThreshold
+            and diffAcrossFrames[2] >= moveThreshold
+        )
+        return fitsCriteria
+
+    def detectLowerWand(self, positions, rotations, moveThreshold=1.0):
+        diffAcrossFrames = positions.max(axis=1) - positions.min(axis=1)
+
+        fitsCriteria = (
+            diffAcrossFrames[0] < moveThreshold
+            and diffAcrossFrames[1] < moveThreshold
+            #and diffAcrossFrames[2] >= moveThreshold # z axis can be whatever
+        )
+
+        self.wandLowered = (True, time.time())
+
+        # check if wand raised
+        return True
+
+    def detectFastAttack(self,positions, rotations, moveThreshold=1.0):
+        diffAcrossFrames = positions.max(axis=1) - positions.min(axis=1)
+
+        fitsCriteria = (
+            diffAcrossFrames[0] < moveThreshold
+            and diffAcrossFrames[1] < moveThreshold
+            and diffAcrossFrames[2] >= moveThreshold
+        )
+
+        # check if wand raised
+        return fitsCriteria
+
+    def detectChargedAttack(self,positions, rotations, moveThreshold=1.0):
+        # check first 40 frames to see if lowered
+
+        # then check if maintains at a low y value
+
+        wandLoweredFrames = 40
+        diffAcrossFrames = positions[:wandLoweredFrames].max(axis=1) - positions[:wandLoweredFrames].min(axis=1)
+
+        wandLowered = (
+            diffAcrossFrames[0] < moveThreshold
+            and diffAcrossFrames[1] < moveThreshold
+            and diffAcrossFrames[2] >= moveThreshold
+        )
+
+        # check if wand not raised
+        return wandLowered
+
+
+    def getAction(self, positionFrames, rotationFrames):
+
+        detectors = {
+            "detectRaiseWand":  {"fn": self.detectRaiseWand, "framesToEvaluate": 40},
+            "detectHorizontal": {"fn": self.detectHorizontal, "framesToEvaluate": 40},
+            "detectRotateSide": {"fn": self.detectRotateSide, "framesToEvaluate": 10},
+            "detectLowerWand":  {"fn": self.detectLowerWand, "framesToEvaluate": 40},
+            #"detectFastAttack": {"fn": detectFastAttack, "framesToEvaluate": 40},
+            #"detectChargedAttack": {"fn": detectChargedAttack, "framesToEvaluate": 120},
+        }
+
+        curLength = len(positionFrames)
+        # print("curLength: ", curLength)
+
+        for detectorName, fn in detectors.items():
+
+            fn = detectors[detectorName]["fn"]
+            framesToEvaluate = detectors[detectorName]["framesToEvaluate"]
+            if curLength < framesToEvaluate:
+                continue
+            # print(
+            #     "detecting from ",
+            #     -framesToEvaluate,
+            #     " to ",
+            #     len(positionFrames),
+            #     " for x frames ",
+            #     len(positionFrames[-framesToEvaluate:]),
+            # )
+
+            fitsCriteria = fn(
+                positionFrames[-framesToEvaluate:], rotationFrames[-framesToEvaluate:]
+            )
+            # fitsCriteria = fn(
+            #    positionFrames[:framesToEvaluate], rotationFrames[:framesToEvaluate]
+            # )
+
+            if fitsCriteria:
+
+                message = "frame 0" + "~" + str(framesToEvaluate) + " " + detectorName
+                print(message)
+                if detectorName == "detectLowerWand": 
+                    print("Wand lowered, no need to do anything yet")
+                    continue
+                elif detectorName == "detectRaiseWand" : 
+                    if self.wandLowered[0]: 
+
+                        waitFastSeconds = 2
+                        waitChargedSeconds = 5
+                        curTime = time.time()
+
+                        ret = ""
+                        if curTime - self.wandLowered[1] >= waitFastSeconds: 
+                            ret = "detectFastAttack"
+                        elif curTime - self.wandLowered[1] >= waitChargedSeconds: 
+                            ret = "detectChargedAttack"
+
+                        self.wandLowered = (False, None)
+                        if ret != "": 
+                            return ret
+
+                return detectorName
 
 
 def test(filename):
