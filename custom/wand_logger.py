@@ -29,6 +29,7 @@ class WandFollower(Node):
         self.maxQueueSize = 50
         self.positionQueue = []
         self.rotationQueue = []
+        self.actionDetector = ActionDetector()
 
         self.pub = rospy.Publisher("wandMovement", String, queue_size=10)
         rospy.init_node('talker', anonymous=True)
@@ -46,7 +47,7 @@ class WandFollower(Node):
         firstNPositions = np.asarray(self.positionQueue[-self.maxQueueSize :])
         firstNRotations = np.asarray(self.rotationQueue[-self.maxQueueSize :])
 
-        action = getAction(firstNPositions, firstNRotations)
+        action = actionDetector.getAction(firstNPositions, firstNRotations)
         if action != None:
             print(action)
             rospy.loginfo(action)
