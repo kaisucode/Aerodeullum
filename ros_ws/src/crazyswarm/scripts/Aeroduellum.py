@@ -40,6 +40,14 @@ def gotoDefault(groupState):
         max_duration = max(duration, max_duration)
     timeHelper.sleep(max_duration)
 
+def quick_attack(spell_group):
+    return
+
+def heavy_attack(spell_group):
+    return
+
+def shield(familiar):
+    return
 
 def play(groupState):
     crazyflies = groupState.crazyflies
@@ -48,9 +56,20 @@ def play(groupState):
 
     while(True):
         # Get input
+        input = 0
         # parse instructions
+            # 0 - quick attack
+        spell = input
         # check drone states
+            # If drones are ready
         # send instructions to each drone async
+        if spell == 0: # Quick attack
+            quick_attack(spell_group_1)
+        elif spell == 1: # Heavy Attack
+            heavy_attack(spell_group_1)
+        elif spell == 2: # Shield 
+            shield(familiar_1)
+
         # update drone states
 
 
