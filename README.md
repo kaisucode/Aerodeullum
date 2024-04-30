@@ -12,9 +12,9 @@ A Large Nano-Quadcopter Swarm.
 Available wand movements
 - "detectRaiseWand": initialize drones
 - "detectRotateSide": blocking/shielding
-- "detectFastAttack"
-- "detectChargedAttack"
-- "detectHorizontal": n/a
+- "detectFastAttack": fast attack
+- "detectChargedAttack": n/a
+- "detectHorizontal": charged attack
 
 ---
 

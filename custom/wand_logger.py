@@ -5,6 +5,8 @@ import rclpy
 #from crazyflie_py import Crazyswarm
 #from sensor_msgs.msg import Joy
 
+from crazyflie_py.uav_trajectory import Trajectory
+
 import rospy
 from std_msgs.msg import String
 
@@ -45,12 +47,12 @@ class WandFollower(Node):
         firstNPositions = np.asarray(self.positionQueue[-self.maxQueueSize :])
         firstNRotations = np.asarray(self.rotationQueue[-self.maxQueueSize :])
 
-        action = actionDetector.getAction(firstNPositions, firstNRotations)
+        action = self.actionDetector.getAction(firstNPositions, firstNRotations)
         if action != None:
             print(action)
             rospy.loginfo(action)
             self.pub.publish(action)
-            rate.sleep()
+            self.rate.sleep()
         return
 
     def pose_callback(self, msg):
