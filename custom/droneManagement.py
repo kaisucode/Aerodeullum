@@ -6,10 +6,10 @@ from std_msgs.msg import String
 
 
 class Aeroduellum(Node):
-  def __init__(self, groupState):
+  def __init__(self, groupState, player):
     super().__init__('drone_management')
     self.crazyflies = groupState.crazyflies[:] # familiar crazyflie is 0, rest are spell
-
+    self.player = player
     self.status = np.zeros(len(self.crazyflies)) # 0 is available, 1 is busy
     self.shield_flag = False
     self.quick_attack_flag = False
@@ -17,19 +17,13 @@ class Aeroduellum(Node):
     
 
     # create subscriptions
-    self.spell_subscriber = self.create_subscription(String, 'spell', self.spell_callback, 1)
+    self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
     # self.enemy_attack_subscriber = self.create_subscription(Int32, 'attack', self.enemy_attack_callback, 1)
     self.call_timer = self.create_timer(1/self.Hz, self.timer_cb)
 
     # Create publisher for publishing attacks to other player
     # self.attack_publisher = self.create_publisher(Int32, 'attack', )
 
-    # We'll use known-to-work parameters for safety, but you can alter for sim
-    self.controller = PDController(1, 0.05)
-
-    # Lists for plotting
-    self.states = []
-    self.goals = []
 
   def spell_callback(self, msg):
     """

@@ -15,8 +15,9 @@ import queue
 
 class WandFollower(Node):
 
-    def __init__(self, crazyflie, timeHelper, max_speed=0.5, update_frequency=20):
+    def __init__(self, crazyflie, timeHelper, max_speed=0.5, update_frequency=20, player):
         super().__init__("wand_follower_node")
+        self.player=player
         self.max_speed = max_speed
         self.Hz = update_frequency
         self.wand_pose = ([0, 0, 0.25], [0, 0, 0, 1])
@@ -31,7 +32,7 @@ class WandFollower(Node):
         self.rotationQueue = []
         self.actionDetector = ActionDetector()
 
-        self.pub = rospy.Publisher("wandMovement", String, queue_size=10)
+        self.pub = rospy.Publisher("wandMovement" + self.player, String, queue_size=10)
         rospy.init_node('talker', anonymous=True)
         self.rate = rospy.Rate(10) # 10hz
 
