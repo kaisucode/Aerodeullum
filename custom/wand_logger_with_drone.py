@@ -3,50 +3,77 @@ from tf2_msgs.msg import TFMessage
 from rclpy.node import Node
 import rclpy
 from crazyflie_py import Crazyswarm
-#from sensor_msgs.msg import Joy
+
+# from sensor_msgs.msg import Joy
 from pathlib import Path
 from rclpy.executors import MultiThreadedExecutor
+from crazyflie_py.uav_trajectory import Trajectory
 
-import rospy
+
+# import rospy
 from std_msgs.msg import String
 
 from action_detector import *
 import queue
+import math
 
 haveDrones = True
 
+singleDroneId = 45
+
+
 dronePositions = {
-        "sideA": {
-            "id_1": [-3, -2, 1],
-            "id_2": [-3, -1.5, 1.5],
-            "id_3": [-3, -1, 1],
-            "id_4": [-4, 2, 1]
-            },
-        "sideB": {
-            "id_5": [3, 2.5, 1],
-            "id_6": [3, 2, 1.5],
-            "id_7": [3, 1.5, 1],
-            "id_8": [4, -1.5, 1]
-            }
-        }
+    "sideA": {
+        singleDroneId: [-3, -2, 1],
+        # "id_2": [-3, -1.5, 1.5],
+        # "id_3": [-3, -1, 1],
+        # "id_4": [-4, 2, 1],
+    },
+    # "sideB": {
+    #     "id_5": [3, 2.5, 1],
+    #     "id_6": [3, 2, 1.5],
+    #     "id_7": [3, 1.5, 1],
+    #     "id_8": [4, -1.5, 1],
+    # },
+}
+
+
+def euler_from_quaternion(x, y, z, w):
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + y * y)
+    roll_x = math.atan2(t0, t1)
+
+    t2 = +2.0 * (w * y - z * x)
+    t2 = +1.0 if t2 > +1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    pitch_y = math.asin(t2)
+
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (y * y + z * z)
+    yaw_z = math.atan2(t3, t4)
+
+    # return roll_x, pitch_y, yaw_z # in radians
+    return math.degrees(roll_x), math.degrees(pitch_y), math.degrees(yaw_z)
+
 
 trajectoryFilemapping = {
-        "triple_shield_center": 0,
-        "triple_shield_left": 1,
-        "triple_shield_right": 2,
-        "spiral": 3,
-        }
-
+    "triple_shield_center": 0,
+    "triple_shield_left": 1,
+    "triple_shield_right": 2,
+    "spiral": 3,
+}
 
 
 class WandFollower(Node):
 
-    def __init__(self, allcfs, timeHelper, curSide="side_a", max_speed=0.5, update_frequency=20):
+    def __init__(
+        self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=20
+    ):
         super().__init__("wand_follower_node")
         self.max_speed = max_speed
         self.Hz = update_frequency
         self.wand_pose = ([0, 0, 0.25], [0, 0, 0, 1])
-        #self.controller = PDController(10, 0)
+        # self.controller = PDController(10, 0)
         self.allcfs = allcfs
         self.timeHelper = timeHelper
 
@@ -60,9 +87,9 @@ class WandFollower(Node):
         self.rotationQueue = []
         self.actionDetector = ActionDetector()
 
-        self.pub = rospy.Publisher("wandMovement", String, queue_size=10)
-        rospy.init_node('talker', anonymous=True)
-        self.rate = rospy.Rate(10) # 10hz
+        # self.pub = rospy.Publisher("wandMovement", String, queue_size=10)
+        # rospy.init_node("talker", anonymous=True)
+        # self.rate = rospy.Rate(10)  # 10hz
 
     def timer_cb(self):
         # Get state of wand
@@ -70,41 +97,65 @@ class WandFollower(Node):
 
         # here detect whether the logs are good
         self.positionQueue.append(wand_position)
-        self.rotationQueue.append(wand_rotation)
+        self.rotationQueue.append(euler_from_quaternion(*wand_rotation))
         # print(wand_position)
 
         firstNPositions = np.asarray(self.positionQueue[-self.maxQueueSize :])
         firstNRotations = np.asarray(self.rotationQueue[-self.maxQueueSize :])
 
-        action = actionDetector.getAction(firstNPositions, firstNRotations)
+        action = self.actionDetector.getAction(firstNPositions, firstNRotations)
         if action != None:
 
             # get action
+            print("pretend dooing action ", action)
 
-            if action == "detectRotateSide": 
+            if action == "detectRotateSide":
                 # shield
                 resetDrones(self.curSide, self.allcfs)
 
-                if self.curSide == "side_a": 
-                    self.allcfs.crazyfliesById["id_1"].startTrajectory(trajectoryFilemapping["triple_shield_left"])
-                    self.allcfs.crazyfliesById["id_2"].startTrajectory(trajectoryFilemapping["triple_shield_center"])
-                    self.allcfs.crazyfliesById["id_3"].startTrajectory(trajectoryFilemapping["triple_shield_right"])
-                self.timeHelper.sleep(3) # TODO change duration
+                if self.curSide == "sideA":
+                    # self.allcfs.crazyfliesById[singleDroneId].startTrajectory(
+                    #     trajectoryFilemapping["triple_shield_left"]
+                    # )
+                    self.allcfs.crazyfliesById[singleDroneId].startTrajectory(
+                        trajectoryFilemapping["triple_shield_left"], 1.0, False
+                    )
+                    self.timeHelper.sleep(
+                        allTrajectories[
+                            trajectoryFilemapping["triple_shield_left"]
+                        ].duration
+                    )
+
+                    # self.allcfs.crazyfliesById["id_2"].startTrajectory(
+                    #     trajectoryFilemapping["triple_shield_center"]
+                    # )
+                    # self.allcfs.crazyfliesById["id_3"].startTrajectory(
+                    #     trajectoryFilemapping["triple_shield_right"]
+                    # )
+                self.timeHelper.sleep(3)  # TODO change duration
                 resetDrones(self.curSide, self.allcfs)
 
-            elif action == "detectFastAttack": 
+            elif action == "detectRaiseWand":
                 resetDrones(self.curSide, self.allcfs)
-                if self.curSide == "side_a": 
-                    self.allcfs.crazyfliesById["id_1"].startTrajectory(trajectoryFilemapping["spiral"])
-                    #self.allcfs.crazyfliesById["id_2"].startTrajectory(trajectoryFilemapping["spiral"])
-                    #self.allcfs.crazyfliesById["id_3"].startTrajectory(trajectoryFilemapping["spiral"])
-                self.timeHelper.sleep(3) # TODO change duration
+                if self.curSide == "sideA":
+                    # self.allcfs.crazyfliesById[singleDroneId].startTrajectory(
+                    #     trajectoryFilemapping["spiral"]
+                    # )
+                    self.allcfs.crazyfliesById[singleDroneId].startTrajectory(
+                        trajectoryFilemapping["spiral"], 1.0, False
+                    )
+
+                    # self.allcfs.crazyfliesById["id_2"].startTrajectory(trajectoryFilemapping["spiral"])
+                    # self.allcfs.crazyfliesById["id_3"].startTrajectory(trajectoryFilemapping["spiral"])
+                self.timeHelper.sleep(
+                    allTrajectories[trajectoryFilemapping["spiral"]].duration
+                )
                 resetDrones(self.curSide, self.allcfs)
 
             print(action)
-            rospy.loginfo(action)
-            self.pub.publish(action)
-            rate.sleep()
+            # rospy.loginfo(action)
+            # self.pub.publish(action)
+            # self.rate.sleep()
         return
 
     def pose_callback(self, msg):
@@ -140,15 +191,21 @@ class WandFollower(Node):
                 return
 
 
-def resetDrones(side, allcfs): 
-    for droneId in dronePositions[side]: 
-        allcfs.crazyfliesById[droneId].goTo(np.asarray(dronePositions[side][droneId]), 0, 5.0)
+def resetDrones(side, allcfs):
+    for droneId in dronePositions[side]:
+        allcfs.crazyfliesById[droneId].goTo(
+            np.asarray(dronePositions[side][droneId]), 0, 5.0
+        )
         timeHelper.sleep(3)
-def loadTrajectories(): 
-    allTrajectories = {} # key: numeric id, value: trajectory 
+
+
+allTrajectories = {}  # key: numeric id, value: trajectory
+
+
+def loadTrajectories():
 
     trajId = 0
-    for fileprefix in trajectoryFilemapping: 
+    for fileprefix in trajectoryFilemapping:
         filename = "aero/" + fileprefix + ".csv"
         allTrajectories[trajId] = Trajectory()
         allTrajectories[trajId].loadcsv(Path(__file__).parent / filename)
@@ -161,6 +218,7 @@ if __name__ == "__main__":
 
     timeHelper = None
     allcfs = None
+    haveDrones = True
     if haveDrones:
         swarm = Crazyswarm()
         timeHelper = swarm.timeHelper
@@ -168,27 +226,36 @@ if __name__ == "__main__":
 
         allTrajectories = loadTrajectories()
 
-        for cf in allcfs.crazyflies: 
-            for trajectoryId in allTrajectories: 
+        for cf in allcfs.crazyflies:
+            for trajectoryId in allTrajectories:
                 cf.uploadTrajectory(trajectoryId, 0, allTrajectories[trajectoryId])
 
         # takeoff all drones
         allcfs.takeoff(targetHeight=1.0, duration=3.0)
+
         timeHelper.sleep(3)
+        # allcfs.crazyfliesById[18].startTrajectory(3, 5.0, False)
+        # timeHelper.sleep(5)
+
+        # print(allcfs.crazyfliesById.keys())
 
         # move all drones to where they should be
-        for side in dronePositions: 
+        for side in dronePositions:
             resetDrones(side, allcfs)
+    else:
+        try:
+            rclpy.init()
 
-    rclpy.init()
+        except:
+            print("nooooool")
 
-    wand_node = WandFollower(allcfs, timeHelper, "side_a")
+    wand_node = WandFollower(allcfs, timeHelper, "sideA")
 
-    executor = rclpy.Executor()
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(wand_node)
-    #executor.add_node(listener) # add second wand node
+    # executor = rclpy.Executor()
+    # executor = MultiThreadedExecutor(num_threads=2)
+    # executor.add_node(wand_node)
+    # executor.add_node(listener) # add second wand node
 
-    executor.spin()
+    # executor.spin()
 
-    #rclpy.spin(wand_node)
+    rclpy.spin(wand_node)
