@@ -17,9 +17,9 @@ class DroneManagement(Node):
     self.quick_attack_flag = False
     self.heavy_attack_flag = False
     
-    self.shield_duration = 5 # 5 seconds, TODO change this to reflect actual length of shield spell through cooldown
-    self.quick_attack_duration = 3
-    self.heavy_attack_duration = 6
+    self.shield_duration = 6 # 5 seconds, TODO change this to reflect actual length of shield spell through cooldown
+    self.quick_attack_duration = 5
+    self.heavy_attack_duration = 10
 
     self.shielding = False
     self.quick_attacking = False
@@ -64,21 +64,12 @@ class DroneManagement(Node):
         if sum(self.status[1:]) >= 3:
            self.heavy_attack_flag = True
 
-    def damage_callback(self, msg):
-       if not self.shielding:
-          self.hp -= msg.data
-          # TODO change familiar HP light color
-          # TODO stagger
-          # TODO check if hp goes below 0, if so end game
-          
-    
-
-  def enemy_attack_callback(self, msg):
-    """
-    Shutdown when button on game pad is pressed
-    """
-    # TODO set flag for familiar stagger behavior 
-    return
+  def damage_callback(self, msg):
+      if not self.shielding:
+        self.hp -= msg.data
+        # TODO change familiar HP light color
+        # TODO stagger
+        # TODO check if hp goes below 0, if so end game
   
   def shield(self, time):
     if self.status[0] == 0:
@@ -111,28 +102,62 @@ class DroneManagement(Node):
   def cast_quick_attack(self, groupState):
      return
   
+  def heavy_attack(self, time):
+    self.heavy_attack_flag = False
+    # select available drone
+    self.heavy_attack_drones = np.where(self.status[1:] == 1)[0:3]
+    if len(self.heavy_attack_drones < 3):
+      # Error, not enough drones
+      print("Error: not enough drones available")
+    else:
+      self.cast_heavy_attack(self.groupState)
+      self.status[self.heavy_attack_drones] = 0 # TODO make sure these indices account for the slice
+    self.heavy_attack_end_time = time + self.heavy_attack_duration
+
+  # Trigger quick_attack movement behavior
+  def cast_heavy_attack(self, groupState):
+     # TODO select drones from heavy_attack_drones and trigger behavior
+     return
+     
+  
   def handle_player(self, time):
+    # Handle losing
     if self.hp <= 0:
        print("player " + self.player + " loses")
        return False
     
+    # Handle Shielding
     if self.shield_flag == True: # Cast Shield
       self.shield(time)
         
-    # set timer 
     if self.shielding and time >= self.shield_end_time: # Reset shield
       self.shielding = False
       self.status[0] = 1
 
+    #Handle Quick Attacks
     # TODO maybe update this to allow for multiple quick attacks in series while the previous one is cooling down
     if self.quick_attack_flag == True: # Cast Quick Attack
       # start quick attack  movement and set timer for shield to sleep
       self.quick_attack(time)
-          
-          
+
     if self.quick_attacking and time >= self.quick_attack_end_time: # Reset quick attack
       self.damage_pub.publish(self.quick_attack_damage)
       self.quick_attacking = False
       self.status[self.quick_attack_drones] = 1
       self.quick_attack_drones = []
+
+    # Handle Heavy Attacks
+    if self.heavy_attack_flag == True: # Cast Quick Attack
+      # start quick attack  movement and set timer for shield to sleep
+      self.heavy_attack(time)
+          
+    if self.heavy_attacking and time >= self.heavy_attack_end_time: # Reset quick attack
+      self.damage_pub.publish(self.heavy_attack_damage)
+      self.heavy_attacking = False
+      self.status[self.heavy_attack_drones] = 1
+      self.heavy_attack_drones = []
+
+    # Return true if game isn't over
     return True
+  
+
