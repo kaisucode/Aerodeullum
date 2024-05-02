@@ -2,6 +2,7 @@ import numpy as np
 from blocklyTranslations import *
 import matplotlib.pyplot as plt
 import argparse
+from rclpy.node import Node
 import rospy
 from std_msgs.msg import Int32
 from std_msgs.msg import String
@@ -17,9 +18,12 @@ class DroneManagement(Node):
     self.quick_attack_flag = False
     self.heavy_attack_flag = False
     
-    self.shield_duration = 6 # 5 seconds, TODO change this to reflect actual length of shield spell through cooldown
+    self.shield_duration = 6        # TODO change this to reflect actual length of shield spell through cooldown
     self.quick_attack_duration = 5
     self.heavy_attack_duration = 10
+    self.hp = 100
+    self.quick_attack_damage = 10
+    self.heavy_attack_damage = 50
 
     self.shielding = False
     self.quick_attacking = False
@@ -30,21 +34,12 @@ class DroneManagement(Node):
     self.quick_attack_end_time = 0
     self.heavy_attack_end_time = 0
 
-    self.hp = 100
-    self.quick_attack_damage = 10
-    self.heavy_attack_damage = 50
-
-    # create subscriptions
-    self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
-    # self.enemy_attack_subscriber = self.create_subscription(Int32, 'attack', self.enemy_attack_callback, 1)
-    self.call_timer = self.create_timer(1/self.Hz, self.timer_cb)
-
+    # Create publishers
     self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
+
+    # Create Subscribers
+    self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
     self.damage_subscriber = self.create_subscription(Int32, "damage" + (1 if self.player == 0 else 0), self.damage_callback, 1)
-
-    # Create publisher for publishing attacks to other player
-    # self.attack_publisher = self.create_publisher(Int32, 'attack', )
-
 
   def spell_callback(self, msg):
     """
@@ -129,7 +124,6 @@ class DroneManagement(Node):
     # Handle Shielding
     if self.shield_flag == True: # Cast Shield
       self.shield(time)
-        
     if self.shielding and time >= self.shield_end_time: # Reset shield
       self.shielding = False
       self.status[0] = 1
@@ -139,7 +133,6 @@ class DroneManagement(Node):
     if self.quick_attack_flag == True: # Cast Quick Attack
       # start quick attack  movement and set timer for shield to sleep
       self.quick_attack(time)
-
     if self.quick_attacking and time >= self.quick_attack_end_time: # Reset quick attack
       self.damage_pub.publish(self.quick_attack_damage)
       self.quick_attacking = False
@@ -150,7 +143,6 @@ class DroneManagement(Node):
     if self.heavy_attack_flag == True: # Cast Quick Attack
       # start quick attack  movement and set timer for shield to sleep
       self.heavy_attack(time)
-          
     if self.heavy_attacking and time >= self.heavy_attack_end_time: # Reset quick attack
       self.damage_pub.publish(self.heavy_attack_damage)
       self.heavy_attacking = False

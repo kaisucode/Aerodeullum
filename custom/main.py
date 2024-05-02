@@ -60,8 +60,10 @@ def main():
       # Handle Player 2
       p2 = p2_dm.handle_player(time)
       
-    print("Game over: " + ("player 1 " if p2 else "player 2 ") + "wins!")
+    print("Game over: " + ("player 1 " if p1 else "player 2 ") + "wins!")
     land(groupState, 0.01, 3)
+    timeHelper.sleep(3.0)
+
     if sim:
       fig = plt.figure()
       ax = fig.add_subplot(111, projection='3d')
