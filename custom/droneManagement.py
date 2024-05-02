@@ -2,6 +2,8 @@ import numpy as np
 from blocklyTranslations import *
 import matplotlib.pyplot as plt
 import argparse
+import rospy
+from std_msgs.msg import Int32
 from std_msgs.msg import String
 
 
@@ -28,10 +30,17 @@ class DroneManagement(Node):
     self.quick_attack_end_time = 0
     self.heavy_attack_end_time = 0
 
+    self.hp = 100
+    self.quick_attack_damage = 10
+    self.heavy_attack_damage = 50
+
     # create subscriptions
     self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
     # self.enemy_attack_subscriber = self.create_subscription(Int32, 'attack', self.enemy_attack_callback, 1)
     self.call_timer = self.create_timer(1/self.Hz, self.timer_cb)
+
+    self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
+    self.damage_subscriber = self.create_subscription(Int32, "damage" + (1 if self.player == 0 else 0), self.damage_callback, 1)
 
     # Create publisher for publishing attacks to other player
     # self.attack_publisher = self.create_publisher(Int32, 'attack', )
@@ -54,6 +63,14 @@ class DroneManagement(Node):
     elif msg.data == 'detectChargedAttack': # heavy attack
         if sum(self.status[1:]) >= 3:
            self.heavy_attack_flag = True
+
+    def damage_callback(self, msg):
+       if not self.shielding:
+          self.hp -= msg.data
+          # TODO change familiar HP light color
+          # TODO stagger
+          # TODO check if hp goes below 0, if so end game
+          
     
 
   def enemy_attack_callback(self, msg):
@@ -74,6 +91,7 @@ class DroneManagement(Node):
     self.shield_end_time = time + self.shield_duration
     return True
   
+  # Trigger shield movement behavior
   def cast_shield(self, groupState):
      return
   
@@ -89,14 +107,19 @@ class DroneManagement(Node):
       self.status[self.quick_attack_drones] = 0 # TODO make sure these indices account for the slice
     self.quick_attack_end_time = time + self.quick_attack_duration
 
+  # Trigger quick_attack movement behavior
   def cast_quick_attack(self, groupState):
      return
   
   def handle_player(self, time):
+    if self.hp <= 0:
+       print("player " + self.player + " loses")
+       return False
+    
     if self.shield_flag == True: # Cast Shield
       self.shield(time)
         
-        # set timer 
+    # set timer 
     if self.shielding and time >= self.shield_end_time: # Reset shield
       self.shielding = False
       self.status[0] = 1
@@ -108,6 +131,8 @@ class DroneManagement(Node):
           
           
     if self.quick_attacking and time >= self.quick_attack_end_time: # Reset quick attack
+      self.damage_pub.publish(self.quick_attack_damage)
       self.quick_attacking = False
       self.status[self.quick_attack_drones] = 1
       self.quick_attack_drones = []
+    return True

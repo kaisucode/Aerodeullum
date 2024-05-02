@@ -51,16 +51,18 @@ def main():
     rclpy.spin(p2_dm)
     
     # Game loop
-    while True:
+    p1 = True 
+    p2 = True
+    while p1 and p2:
       time = time.time()
       # Handle Player 1
-      p1_dm.handle_player(time)
+      p1 = p1_dm.handle_player(time)
       # Handle Player 2
-      p2_dm.handle_player(time)
+      p2 = p2_dm.handle_player(time)
       
       
 
-
+    print("Game over")
     if sim:
       fig = plt.figure()
       ax = fig.add_subplot(111, projection='3d')
