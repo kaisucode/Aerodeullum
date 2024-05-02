@@ -5,7 +5,7 @@ import argparse
 from std_msgs.msg import String
 
 
-class Aeroduellum(Node):
+class DroneManagement(Node):
   def __init__(self, groupState, player):
     super().__init__('drone_management')
     self.crazyflies = groupState.crazyflies[:] # familiar crazyflie is 0, rest are spell
@@ -15,6 +15,18 @@ class Aeroduellum(Node):
     self.quick_attack_flag = False
     self.heavy_attack_flag = False
     
+    self.shield_duration = 5 # 5 seconds, TODO change this to reflect actual length of shield spell through cooldown
+    self.quick_attack_duration = 3
+    self.heavy_attack_duration = 6
+
+    self.shielding = False
+    self.quick_attacking = False
+    self.heavy_attacking = False
+    self.quick_attack_drones = []
+    self.heavy_attack_drones = []
+    self.shield_end_time = 0
+    self.quick_attack_end_time = 0
+    self.heavy_attack_end_time = 0
 
     # create subscriptions
     self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
@@ -50,3 +62,52 @@ class Aeroduellum(Node):
     """
     # TODO set flag for familiar stagger behavior 
     return
+  
+  def shield(self, time):
+    if self.status[0] == 0:
+      return False
+    self.shield_flag = False
+    self.status[0] = 0
+    # shield() call command to have familiar drone enact shield behavior
+    self.cast_shield(self.groupState)
+    self.shielding = True
+    self.shield_end_time = time + self.shield_duration
+    return True
+  
+  def cast_shield(self, groupState):
+     return
+  
+  def quick_attack(self, time):
+    self.quick_attack_flag = False
+    # select available drone
+    self.quick_attack_drones = np.where(self.status[1:] == 1)[0]
+    if len(self.quick_attack_drones < 1):
+      # Error, not enough drones
+      print("Error: not enough drones available")
+    else:
+      self.cast_quick_attack(self.groupState)
+      self.status[self.quick_attack_drones] = 0 # TODO make sure these indices account for the slice
+    self.quick_attack_end_time = time + self.quick_attack_duration
+
+  def cast_quick_attack(self, groupState):
+     return
+  
+  def handle_player(self, time):
+    if self.shield_flag == True: # Cast Shield
+      self.shield(time)
+        
+        # set timer 
+    if self.shielding and time >= self.shield_end_time: # Reset shield
+      self.shielding = False
+      self.status[0] = 1
+
+    # TODO maybe update this to allow for multiple quick attacks in series while the previous one is cooling down
+    if self.quick_attack_flag == True: # Cast Quick Attack
+      # start quick attack  movement and set timer for shield to sleep
+      self.quick_attack(time)
+          
+          
+    if self.quick_attacking and time >= self.quick_attack_end_time: # Reset quick attack
+      self.quick_attacking = False
+      self.status[self.quick_attack_drones] = 1
+      self.quick_attack_drones = []
