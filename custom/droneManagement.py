@@ -83,7 +83,7 @@ class DroneManagement(Node):
 
         # Create publishers
         # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
-        self.damage_pub = self.create_publisher(Int32, "damage" + str(self.player), queue_size=10)
+        self.damage_pub = self.create_publisher(Int32, "damage" + str(self.player), 10)
 
         # Create Subscribers
         self.spell_subscriber = self.create_subscription(String, 'spell'+str(self.player), self.spell_callback, 1)
