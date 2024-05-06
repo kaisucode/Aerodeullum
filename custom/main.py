@@ -49,6 +49,10 @@ def main():
     rclpy.spin(p2_wand_node)
     rclpy.spin(p1_dm)
     rclpy.spin(p2_dm)
+
+    for idx in range(4): 
+        p1_dm.initialize_drone_position(p1_dm.groupState, idx, 1)
+        p2_dm.initialize_drone_position(p1_dm.groupState, idx, 2)
     
     # Game loop
     p1 = True 
