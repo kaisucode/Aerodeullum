@@ -155,10 +155,10 @@ class ActionDetector:
     def getAction(self, positionFrames, rotationFrames):
 
         detectors = {
-            "detectRaiseWand": {"fn": self.detectRaiseWand, "framesToEvaluate": 40},
-            "detectHorizontal": {"fn": self.detectHorizontal, "framesToEvaluate": 40},
             "detectRotateSide": {"fn": self.detectRotateSide, "framesToEvaluate": 20},
-            "detectLowerWand": {"fn": self.detectLowerWand, "framesToEvaluate": 40},
+            "detectFastAttack": {"fn": self.detectLowerWand, "framesToEvaluate": 40},
+            "detectChargedAttack": {"fn": self.detectHorizontal, "framesToEvaluate": 40},
+            "detectRaiseWand": {"fn": self.detectRaiseWand, "framesToEvaluate": 40},
             # "detectFastAttack": {"fn": detectFastAttack, "framesToEvaluate": 40},
             # "detectChargedAttack": {"fn": detectChargedAttack, "framesToEvaluate": 120},
         }
