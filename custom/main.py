@@ -1,7 +1,7 @@
 import numpy as np
 from blocklyTranslations import *
-from custom.droneManagement import DroneManagement
-from wand_logger import WandFollower
+from droneManagement import DroneManagement
+from wand_logger_with_drone import WandFollower
 import time
 
 from action_detector import *
@@ -36,11 +36,11 @@ def main():
     p1_crazyflies = SimpleNamespace(crazyflies=crazyflies[0:4], timeHelper=timeHelper)
     p2_crazyflies = SimpleNamespace(crazyflies=crazyflies[4:8], timeHelper=timeHelper)
     # Start Wand Follower Nodes
-    p1_wand_node = WandFollower(p1_crazyflies, timeHelper, sim=sim, player=1)
-    p2_wand_node = WandFollower(p2_crazyflies, timeHelper, sim=sim, player=2)
+    p1_wand_node = WandFollower(p1_crazyflies, timeHelper, player=1)
+    p2_wand_node = WandFollower(p2_crazyflies, timeHelper, player=2)
     # Start Drone Management Nodes 
-    p1_dm = DroneManagement(p1_crazyflies, timeHelper, sim=sim, player=1)
-    p2_dm = DroneManagement(p2_crazyflies, timeHelper, sim=sim, player=2)
+    p1_dm = DroneManagement(p1_crazyflies, player=1)
+    p2_dm = DroneManagement(p2_crazyflies, player=2)
 
     takeoff(groupState, 1.0, 3)
     timeHelper.sleep(3.0)

@@ -3,7 +3,6 @@ from blocklyTranslations import *
 import matplotlib.pyplot as plt
 import argparse
 from rclpy.node import Node
-import rospy
 from std_msgs.msg import Int32
 from std_msgs.msg import String
 
@@ -76,11 +75,11 @@ class DroneManagement(Node):
 
     # Create publishers
     # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
-    self.damage_pub = self.create_publisher(Int32, "damage" + self.player, queue_size=10)
+    self.damage_pub = self.create_publisher(Int32, "damage" + str(self.player), queue_size=10)
 
     # Create Subscribers
-    self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
-    self.damage_subscriber = self.create_subscription(Int32, "damage" + (1 if self.player == 0 else 0), self.damage_callback, 1)
+    self.spell_subscriber = self.create_subscription(String, 'spell'+str(self.player), self.spell_callback, 1)
+    self.damage_subscriber = self.create_subscription(Int32, "damage" + ("1" if self.player == 0 else "0"), self.damage_callback, 1)
 
   def getTrajectory(self, trajName): 
       return trajectoryFilemapping[trajName]["id"], trajectoryFilemapping[trajName]["trajectory"]
