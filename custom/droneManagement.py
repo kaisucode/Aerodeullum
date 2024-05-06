@@ -48,6 +48,7 @@ class DroneManagement(Node):
     self.shield_flag = False
     self.quick_attack_flag = False
     self.heavy_attack_flag = False
+    self.groupState = groupState
     
     self.shield_duration = 6        # TODO change this to reflect actual length of shield spell through cooldown
     self.quick_attack_duration = 5
@@ -90,6 +91,14 @@ class DroneManagement(Node):
         # If familiar is available, set defense spell flag to be triggered in loop
         if self.status[0] == 0:
            self.defense_flag = True
+
+        singleDroneId = 3 # TODO modify this!
+        self.groupState.crazyfliesById[singleDroneId].startTrajectory(
+                self.trajectoryFilemapping["triple_shield_left"]["id"], 1.0, False
+                )
+        executeDuration = trajectoryFilemapping["triple_shield_left"]["trajectory"].duration
+        # sleep for the above duration
+
     elif msg.data == 'detectFastAttack': # quick attack
         # If a spell drone is available, set quick attack flag to be triggered in main loop
         if sum(self.status[1:]) >= 1:
