@@ -77,10 +77,6 @@ class DroneManagement(Node):
     self.shield_end_time = time + self.shield_duration
     return True
   
-  # Trigger shield movement behavior
-  def cast_shield(self, groupState):
-     return
-  
   def quick_attack(self, time):
     self.quick_attack_flag = False
     # select available drone
@@ -93,10 +89,6 @@ class DroneManagement(Node):
       self.status[self.quick_attack_drones] = 0 # TODO make sure these indices account for the slice
     self.quick_attack_end_time = time + self.quick_attack_duration
 
-  # Trigger quick_attack movement behavior
-  def cast_quick_attack(self, groupState):
-     return
-  
   def heavy_attack(self, time):
     self.heavy_attack_flag = False
     # select available drone
@@ -109,11 +101,20 @@ class DroneManagement(Node):
       self.status[self.heavy_attack_drones] = 0 # TODO make sure these indices account for the slice
     self.heavy_attack_end_time = time + self.heavy_attack_duration
 
+  # Trigger shield movement behavior
+  def cast_shield(self, groupState):
+     return
+
+  # Trigger quick_attack movement behavior
+  def cast_quick_attack(self, groupState):
+     return
+  
   # Trigger quick_attack movement behavior
   def cast_heavy_attack(self, groupState):
      # TODO select drones from heavy_attack_drones and trigger behavior
      return
      
+
   
   def handle_player(self, time):
     # Handle losing
