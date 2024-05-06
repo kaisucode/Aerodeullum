@@ -83,11 +83,11 @@ class DroneManagement(Node):
 
         # Create publishers
         # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
-        self.damage_pub = self.create_publisher(Int32, "damage" + str(self.player+1), 10)
+        self.damage_pub = self.create_publisher(Int32, "damage" + str(self.player), 10)
 
         # Create Subscribers
-        self.spell_subscriber = self.create_subscription(String, 'spell'+str(self.player+1), self.spell_callback, 1)
-        self.damage_subscriber = self.create_subscription(Int32, "damage" + ("1" if self.player == 0 else "2"), self.damage_callback, 1)
+        self.spell_subscriber = self.create_subscription(String, 'spell'+str(self.player), self.spell_callback, 1)
+        self.damage_subscriber = self.create_subscription(Int32, "damage" + ("2" if self.player == 1 else "1"), self.damage_callback, 1)
 
     def getTrajectory(self, trajName): 
         return self.trajectoryFilemapping[trajName]["id"], self.trajectoryFilemapping[trajName]["trajectory"]
@@ -99,26 +99,26 @@ class DroneManagement(Node):
         """
         if msg.data == 'detectRotateSide': # defend
             # If familiar is available, set defense spell flag to be triggered in loop
-            print("Player " + str(self.player+1) + " is trying to cast shield")
+            print("Player " + str(self.player) + " is trying to cast shield")
             if self.status[0] == 0:
                 self.defense_flag = True
-                print("Player " + str(self.player+1) + " casts shield!")
+                print("Player " + str(self.player) + " casts shield!")
 
         elif msg.data == 'detectFastAttack': # quick attack
             # If a spell drone is available, set quick attack flag to be triggered in main loop
             if sum(self.status[1:]) >= 1:
                 self.quick_attack_flag = True
-                print("Player " + str(self.player+1) + " casts quick attack!")
+                print("Player " + str(self.player) + " casts quick attack!")
         elif msg.data == 'detectChargedAttack': # heavy attack
             if sum(self.status[1:]) >= 3:
                 self.heavy_attack_flag = True
-                print("Player " + str(self.player+1) + " casts heavy attack!")
+                print("Player " + str(self.player) + " casts heavy attack!")
 
     def damage_callback(self, msg):
         # if not self.shielding:
         if time.time() > self.protection_end_time:
             self.hp -= msg.data
-            print("Player " + str(self.player+1) + " was struck for " + str(msg.data) + " damage! " + str(self.hp) + " HP remaining")
+            print("Player " + str(self.player) + " was struck for " + str(msg.data) + " damage! " + str(self.hp) + " HP remaining")
             # TODO change familiar HP light color
             # TODO stagger
             # TODO check if hp goes below 0, if so end game
@@ -193,7 +193,7 @@ class DroneManagement(Node):
     def handle_player(self, time):
         # Handle losing
         if self.hp <= 0:
-            print("player " + str(self.player+1) + " loses")
+            print("player " + str(self.player) + " loses")
             return False
 
         # Handle Shielding

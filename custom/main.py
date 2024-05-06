@@ -9,6 +9,7 @@ import queue
    
 def main():
     sim = False
+    multiplayer = True
     if sim:
         # Use sim version of crazyswarm
         from pycrazyswarm import Crazyswarm
@@ -34,21 +35,23 @@ def main():
 
     # Create groups for each player's drones
     p1_crazyflies = SimpleNamespace(crazyflies=crazyflies[0:4], timeHelper=timeHelper)
-    p2_crazyflies = SimpleNamespace(crazyflies=crazyflies[4:8], timeHelper=timeHelper)
     # Start Wand Follower Nodes
     p1_wand_node = WandFollower(p1_crazyflies, timeHelper, player=1)
-    p2_wand_node = WandFollower(p2_crazyflies, timeHelper, player=2)
     # Start Drone Management Nodes 
     p1_dm = DroneManagement(p1_crazyflies, player=1)
-    p2_dm = DroneManagement(p2_crazyflies, player=2)
+    if multiplayer:
+        p2_crazyflies = SimpleNamespace(crazyflies=crazyflies[4:8], timeHelper=timeHelper)
+        p2_wand_node = WandFollower(p2_crazyflies, timeHelper, player=2)
+        p2_dm = DroneManagement(p2_crazyflies, player=2)
 
     takeoff(groupState, 1.0, 3)
     timeHelper.sleep(3.0)
 
     rclpy.spin(p1_wand_node)
-    rclpy.spin(p2_wand_node)
     rclpy.spin(p1_dm)
-    rclpy.spin(p2_dm)
+    if multiplayer:
+        rclpy.spin(p2_wand_node)
+        rclpy.spin(p2_dm)
     
     # Game loop
     p1 = True 
@@ -57,8 +60,9 @@ def main():
       time = time.time()
       # Handle Player 1
       p1 = p1_dm.handle_player(time)
-      # Handle Player 2
-      p2 = p2_dm.handle_player(time)
+      if multiplayer:
+          # Handle Player 2
+          p2 = p2_dm.handle_player(time)
       
     print("Game over: " + ("player 1 " if p1 else "player 2 ") + "wins!")
     land(groupState, 0.01, 3)
