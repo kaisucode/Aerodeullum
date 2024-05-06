@@ -1,5 +1,5 @@
 import numpy as np
-from blocklyTranslations import *
+from custom.blocklyTranslations import *
 import matplotlib.pyplot as plt
 import argparse
 

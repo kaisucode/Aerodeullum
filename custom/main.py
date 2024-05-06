@@ -1,11 +1,12 @@
 import numpy as np
 from blocklyTranslations import *
-from aeroduellum import Aeroduellum
+from custom.droneManagement import DroneManagement
+from wand_logger import WandFollower
 import time
 
 from action_detector import *
 import queue
-
+   
 def main():
     sim = False
     if sim:
@@ -28,65 +29,40 @@ def main():
         swarm = Crazyswarm()
         crazyflies = swarm.allcfs.crazyflies
         timeHelper = swarm.timeHelper
-
+        
         groupState = SimpleNamespace(crazyflies=crazyflies, timeHelper=timeHelper)
 
-    allcfs = swarm.allcfs
-    cf = allcfs.crazyflies[0]
-    wand_node = WandFollower(groupState, timeHelper, sim=sim)
-    drone_management = Aeroduellum(groupState, timeHelper, sim=sim)
+    # Create groups for each player's drones
+    p1_crazyflies = SimpleNamespace(crazyflies=crazyflies[0:4], timeHelper=timeHelper)
+    p2_crazyflies = SimpleNamespace(crazyflies=crazyflies[4:8], timeHelper=timeHelper)
+    # Start Wand Follower Nodes
+    p1_wand_node = WandFollower(p1_crazyflies, timeHelper, sim=sim, player=1)
+    p2_wand_node = WandFollower(p2_crazyflies, timeHelper, sim=sim, player=2)
+    # Start Drone Management Nodes 
+    p1_dm = DroneManagement(p1_crazyflies, timeHelper, sim=sim, player=1)
+    p2_dm = DroneManagement(p2_crazyflies, timeHelper, sim=sim, player=2)
+
     takeoff(groupState, 1.0, 3)
     timeHelper.sleep(3.0)
 
-    rclpy.spin(wand_node)
-    rclpy.spin(drone_management)
+    rclpy.spin(p1_wand_node)
+    rclpy.spin(p2_wand_node)
+    rclpy.spin(p1_dm)
+    rclpy.spin(p2_dm)
     
     # Game loop
-    shield_duration = 5 # 5 seconds, TODO change this to reflect actual length of shield spell through cooldown
-    quick_attack_duration = 3
-    heavy_attack_duration = 6
-    shielding = False
-    quick_attacking = False
-    heavy_attacking = False
-    quick_attack_drones = []
-    heavy_attack_drones = []
-
-    
-    prev_time = time.time()
-    while True:
+    p1 = True 
+    p2 = True
+    while p1 and p2:
       time = time.time()
-
-      if drone_management.shield_flag == True: # Cast Shield
-        # start shield movement and set timer for shield to sleep
-        drone_management.shield_flag = False
-        drone_management.status[0] = 0
-        # shield() call command to have familiar drone enact shield behavior
-        shield_end_time = time + shield_duration
-        
-        # set timer 
-      if shielding and time >= shield_end_time: # Reset shield
-        shielding = False
-        drone_management.status[0] = 1
-
-      # TODO maybe update this to allow for multiple quick attacks in series while the previous one is cooling down
-      if drone_management.quick_attack_flag == True: # Cast Shield
-        # start shield movement and set timer for shield to sleep
-        drone_management.quick_attack_flag = False
-        # select available drone
-        quick_attack_drones = np.where(drone_management.status[1:] == 1)[0]
-        if len(quick_attack_drones < 1):
-          # Error, not enough drones
-          print("Error: not enough drones available")
-        else:
-          drone_management.status[quick_attack_drones] = 0 # TODO make sure these indices account for the slice
-        quick_attack_end_time = time + quick_attack_duration
-        
-      if quick_attacking and time >= quick_attack_end_time: # Reset quick attack
-        quick_attacking = False
-        drone_management.status[quick_attack_drones] = 1
-        quick_attack_drones = []
+      # Handle Player 1
+      p1 = p1_dm.handle_player(time)
+      # Handle Player 2
+      p2 = p2_dm.handle_player(time)
       
-
+    print("Game over: " + ("player 1 " if p1 else "player 2 ") + "wins!")
+    land(groupState, 0.01, 3)
+    timeHelper.sleep(3.0)
 
     if sim:
       fig = plt.figure()
