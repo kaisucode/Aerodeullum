@@ -35,7 +35,8 @@ class DroneManagement(Node):
     self.heavy_attack_end_time = 0
 
     # Create publishers
-    self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
+    # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
+    self.damage_pub = self.create_publisher(Int32, "damage" + self.player, queue_size=10)
 
     # Create Subscribers
     self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
@@ -85,7 +86,7 @@ class DroneManagement(Node):
       # Error, not enough drones
       print("Error: not enough drones available")
     else:
-      self.cast_quick_attack(self.groupState)
+      self.cast_quick_attack(self.groupState, self.quick_attack_drones[0]) # TODO pass in specific quick attack drone
       self.status[self.quick_attack_drones] = 0 # TODO make sure these indices account for the slice
     self.quick_attack_end_time = time + self.quick_attack_duration
 
@@ -106,7 +107,7 @@ class DroneManagement(Node):
      return
 
   # Trigger quick_attack movement behavior
-  def cast_quick_attack(self, groupState):
+  def cast_quick_attack(self, groupState, quick_attack_drone):
      return
   
   # Trigger quick_attack movement behavior
