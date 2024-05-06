@@ -47,11 +47,11 @@ def main():
     takeoff(groupState, 1.0, 3)
     timeHelper.sleep(3.0)
 
-    rclpy.spin(p1_wand_node)
-    rclpy.spin(p1_dm)
-    if multiplayer:
-        rclpy.spin(p2_wand_node)
-        rclpy.spin(p2_dm)
+    #rclpy.spin(p1_wand_node)
+    #rclpy.spin(p1_dm)
+    #if multiplayer:
+        #rclpy.spin(p2_wand_node)
+        #rclpy.spin(p2_dm)
 
     for idx in range(4): 
         p1_dm.initialize_drone_position(p1_dm.groupState, idx, 1)
@@ -64,9 +64,13 @@ def main():
     while p1 and p2:
       time = time.time()
       # Handle Player 1
+      rclpy.spin_once(p1_wand_node)
+      rclpy.spin_once(p1_dm)
       p1 = p1_dm.handle_player(time)
       if multiplayer:
           # Handle Player 2
+          rclpy.spin_once(p1_wand_node)
+          rclpy.spin_once(p1_dm)
           p2 = p2_dm.handle_player(time)
       
     print("Game over: " + ("player 1 " if p1 else "player 2 ") + "wins!")
