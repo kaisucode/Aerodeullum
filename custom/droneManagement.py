@@ -81,6 +81,9 @@ class DroneManagement(Node):
     self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
     self.damage_subscriber = self.create_subscription(Int32, "damage" + (1 if self.player == 0 else 0), self.damage_callback, 1)
 
+  def getTrajectory(self, trajName): 
+      return trajectoryFilemapping[trajName]["id"], trajectoryFilemapping[trajName]["trajectory"]
+
   def spell_callback(self, msg):
     """
     Spell callback method, called everytime a message is published to the topic /spell
@@ -145,17 +148,20 @@ class DroneManagement(Node):
   # Trigger shield movement behavior
   def cast_shield(self, groupState):
 
-    groupState.crazyflies[0].startTrajectory(
-            self.trajectoryFilemapping["triple_shield_left"]["id"], 1.0, False
-            )
-    executeDuration = trajectoryFilemapping["triple_shield_left"]["trajectory"].duration
+    trajId, traj = self.getTrajectory("triple_shield_left")
+    groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
+    executeDuration = traj.duration
     # sleep for the above duration
-
-     return
+    return
 
   # Trigger quick_attack movement behavior
   def cast_quick_attack(self, groupState):
-     return
+
+    trajId, traj = self.getTrajectory("spiral")
+    groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
+    executeDuration = traj.duration
+
+    return
   
   # Trigger quick_attack movement behavior
   def cast_heavy_attack(self, groupState):
