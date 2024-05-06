@@ -7,6 +7,37 @@ import rospy
 from std_msgs.msg import Int32
 from std_msgs.msg import String
 
+from pathlib import Path
+from crazyflie_py.uav_trajectory import Trajectory
+
+
+singleDroneId = 45
+dronePositions = {
+    "sideA": {
+        singleDroneId: [-3, -2, 1],
+        # "id_2": [-3, -1.5, 1.5],
+        # "id_3": [-3, -1, 1],
+        # "id_4": [-4, 2, 1],
+    },
+    # "sideB": {
+    #     "id_5": [3, 2.5, 1],
+    #     "id_6": [3, 2, 1.5],
+    #     "id_7": [3, 1.5, 1],
+    #     "id_8": [4, -1.5, 1],
+    # },
+}
+
+trajectoryNames = ["triple_shield_center", "triple_shield_left", "triple_shield_right", "spiral", "single_shield", "helix"]
+
+def loadTrajectories():
+    trajectoryFilemapping = {} # {"name": {"trajectory", "id"}}
+    trajId = 0
+    for fileprefix in trajectoryNames:
+        trajectoryFilemapping[fileprefix] = {"id": trajId, "trajectory": Trajectory()}
+        filename = "aero/" + fileprefix + ".csv"
+        trajectoryFilemapping[fileprefix]["trajectory"].loadcsv(Path(__file__).parent / filename)
+        trajId += 1
+    return trajectoryFilemapping
 
 class DroneManagement(Node):
   def __init__(self, groupState, player):
@@ -17,6 +48,7 @@ class DroneManagement(Node):
     self.shield_flag = False
     self.quick_attack_flag = False
     self.heavy_attack_flag = False
+    self.groupState = groupState
     
     self.shield_duration = 6        # TODO change this to reflect actual length of shield spell through cooldown
     self.quick_attack_duration = 5
@@ -34,6 +66,14 @@ class DroneManagement(Node):
     self.quick_attack_end_time = 0
     self.heavy_attack_end_time = 0
 
+    # load trajectories based on csv files, and upload to the drones
+    # key: numeric id, value: trajectory
+    self.trajectoryFilemapping = loadTrajectories()
+    for cf in self.crazyflies:
+        for fileprefix in self.trajectoryFilemapping:
+            trajectoryId = self.trajectoryFilemapping[fileprefix]["id"]
+            cf.uploadTrajectory(trajectoryId, 0, self.trajectoryFilemapping[fileprefix]["trajectory"])
+
     # Create publishers
     # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
     self.damage_pub = self.create_publisher(Int32, "damage" + self.player, queue_size=10)
@@ -41,6 +81,9 @@ class DroneManagement(Node):
     # Create Subscribers
     self.spell_subscriber = self.create_subscription(String, 'spell'+self.player, self.spell_callback, 1)
     self.damage_subscriber = self.create_subscription(Int32, "damage" + (1 if self.player == 0 else 0), self.damage_callback, 1)
+
+  def getTrajectory(self, trajName): 
+      return trajectoryFilemapping[trajName]["id"], trajectoryFilemapping[trajName]["trajectory"]
 
   def spell_callback(self, msg):
     """
@@ -52,6 +95,7 @@ class DroneManagement(Node):
         # If familiar is available, set defense spell flag to be triggered in loop
         if self.status[0] == 0:
            self.defense_flag = True
+
     elif msg.data == 'detectFastAttack': # quick attack
         # If a spell drone is available, set quick attack flag to be triggered in main loop
         if sum(self.status[1:]) >= 1:
@@ -104,11 +148,21 @@ class DroneManagement(Node):
 
   # Trigger shield movement behavior
   def cast_shield(self, groupState):
-     return
+
+    trajId, traj = self.getTrajectory("triple_shield_left")
+    groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
+    executeDuration = traj.duration
+    # sleep for the above duration
+    return
 
   # Trigger quick_attack movement behavior
   def cast_quick_attack(self, groupState, quick_attack_drone):
-     return
+
+    trajId, traj = self.getTrajectory("spiral")
+    groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
+    executeDuration = traj.duration
+
+    return
   
   # Trigger quick_attack movement behavior
   def cast_heavy_attack(self, groupState):

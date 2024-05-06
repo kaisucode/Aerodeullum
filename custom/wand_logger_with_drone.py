@@ -3,11 +3,12 @@ from tf2_msgs.msg import TFMessage
 from rclpy.node import Node
 import rclpy
 from crazyflie_py import Crazyswarm
+from std_msgs.msg import String
 
 # from sensor_msgs.msg import Joy
-from pathlib import Path
-from rclpy.executors import MultiThreadedExecutor
-from crazyflie_py.uav_trajectory import Trajectory
+#from pathlib import Path
+#from crazyflie_py.uav_trajectory import Trajectory
+#from rclpy.executors import MultiThreadedExecutor
 
 
 # import rospy
@@ -19,24 +20,12 @@ import math
 
 haveDrones = True
 
-singleDroneId = 45
-
-
-dronePositions = {
-    "sideA": {
-        singleDroneId: [-3, -2, 1],
-        # "id_2": [-3, -1.5, 1.5],
-        # "id_3": [-3, -1, 1],
-        # "id_4": [-4, 2, 1],
-    },
-    # "sideB": {
-    #     "id_5": [3, 2.5, 1],
-    #     "id_6": [3, 2, 1.5],
-    #     "id_7": [3, 1.5, 1],
-    #     "id_8": [4, -1.5, 1],
-    # },
-}
-
+def resetDrones(side, allcfs):
+    for droneId in dronePositions[side]:
+        allcfs.crazyfliesById[droneId].goTo(
+            np.asarray(dronePositions[side][droneId]), 0, 5.0
+        )
+        timeHelper.sleep(3)
 
 def euler_from_quaternion(x, y, z, w):
     t0 = +2.0 * (w * x + y * z)
@@ -55,21 +44,13 @@ def euler_from_quaternion(x, y, z, w):
     # return roll_x, pitch_y, yaw_z # in radians
     return math.degrees(roll_x), math.degrees(pitch_y), math.degrees(yaw_z)
 
-
-trajectoryFilemapping = {
-    "triple_shield_center": 0,
-    "triple_shield_left": 1,
-    "triple_shield_right": 2,
-    "spiral": 3,
-}
-
-
 class WandFollower(Node):
 
     def __init__(
-        self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=20
+        self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=20, player
     ):
         super().__init__("wand_follower_node")
+        self.player = player
         self.max_speed = max_speed
         self.Hz = update_frequency
         self.wand_pose = ([0, 0, 0.25], [0, 0, 0, 1])
@@ -87,9 +68,7 @@ class WandFollower(Node):
         self.rotationQueue = []
         self.actionDetector = ActionDetector()
 
-        # self.pub = rospy.Publisher("wandMovement", String, queue_size=10)
-        # rospy.init_node("talker", anonymous=True)
-        # self.rate = rospy.Rate(10)  # 10hz
+        self.pub = self.create_publisher(String, 'wandMovement' + self.player, 10)
 
     def timer_cb(self):
         # Get state of wand
@@ -108,6 +87,13 @@ class WandFollower(Node):
 
             # get action
             print("pretend dooing action ", action)
+
+            msg = String()
+            msg.data = action
+            self.pub.publish(msg)
+            self.get_logger().info('Publishing: "%s"' % msg.data)
+
+            return
 
             if action == "detectRotateSide":
                 # shield
@@ -191,34 +177,11 @@ class WandFollower(Node):
                 return
 
 
-def resetDrones(side, allcfs):
-    for droneId in dronePositions[side]:
-        allcfs.crazyfliesById[droneId].goTo(
-            np.asarray(dronePositions[side][droneId]), 0, 5.0
-        )
-        timeHelper.sleep(3)
-
-
-allTrajectories = {}  # key: numeric id, value: trajectory
-
-
-def loadTrajectories():
-
-    trajId = 0
-    for fileprefix in trajectoryFilemapping:
-        filename = "aero/" + fileprefix + ".csv"
-        allTrajectories[trajId] = Trajectory()
-        allTrajectories[trajId].loadcsv(Path(__file__).parent / filename)
-        trajId += 1
-
-    return allTrajectories
-
-
 if __name__ == "__main__":
 
     timeHelper = None
     allcfs = None
-    haveDrones = True
+    haveDrones = False
     if haveDrones:
         swarm = Crazyswarm()
         timeHelper = swarm.timeHelper
