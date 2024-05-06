@@ -92,13 +92,6 @@ class DroneManagement(Node):
         if self.status[0] == 0:
            self.defense_flag = True
 
-        singleDroneId = 3 # TODO modify this!
-        self.groupState.crazyfliesById[singleDroneId].startTrajectory(
-                self.trajectoryFilemapping["triple_shield_left"]["id"], 1.0, False
-                )
-        executeDuration = trajectoryFilemapping["triple_shield_left"]["trajectory"].duration
-        # sleep for the above duration
-
     elif msg.data == 'detectFastAttack': # quick attack
         # If a spell drone is available, set quick attack flag to be triggered in main loop
         if sum(self.status[1:]) >= 1:
@@ -151,6 +144,13 @@ class DroneManagement(Node):
 
   # Trigger shield movement behavior
   def cast_shield(self, groupState):
+
+    groupState.crazyflies[0].startTrajectory(
+            self.trajectoryFilemapping["triple_shield_left"]["id"], 1.0, False
+            )
+    executeDuration = trajectoryFilemapping["triple_shield_left"]["trajectory"].duration
+    # sleep for the above duration
+
      return
 
   # Trigger quick_attack movement behavior
