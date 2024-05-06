@@ -7,6 +7,37 @@ import rospy
 from std_msgs.msg import Int32
 from std_msgs.msg import String
 
+from pathlib import Path
+from crazyflie_py.uav_trajectory import Trajectory
+
+
+singleDroneId = 45
+dronePositions = {
+    "sideA": {
+        singleDroneId: [-3, -2, 1],
+        # "id_2": [-3, -1.5, 1.5],
+        # "id_3": [-3, -1, 1],
+        # "id_4": [-4, 2, 1],
+    },
+    # "sideB": {
+    #     "id_5": [3, 2.5, 1],
+    #     "id_6": [3, 2, 1.5],
+    #     "id_7": [3, 1.5, 1],
+    #     "id_8": [4, -1.5, 1],
+    # },
+}
+
+trajectoryNames = ["triple_shield_center", "triple_shield_left", "triple_shield_right", "spiral", "single_shield", "helix"]
+
+def loadTrajectories():
+    trajectoryFilemapping = {} # {"name": {"trajectory", "id"}}
+    trajId = 0
+    for fileprefix in trajectoryNames:
+        trajectoryFilemapping[fileprefix] = {"id": trajId, "trajectory": Trajectory()}
+        filename = "aero/" + fileprefix + ".csv"
+        trajectoryFilemapping[fileprefix]["trajectory"].loadcsv(Path(__file__).parent / filename)
+        trajId += 1
+    return trajectoryFilemapping
 
 class DroneManagement(Node):
   def __init__(self, groupState, player):
@@ -33,6 +64,14 @@ class DroneManagement(Node):
     self.shield_end_time = 0
     self.quick_attack_end_time = 0
     self.heavy_attack_end_time = 0
+
+    # load trajectories based on csv files, and upload to the drones
+    # key: numeric id, value: trajectory
+    self.trajectoryFilemapping = loadTrajectories()
+    for cf in self.crazyflies:
+        for fileprefix in self.trajectoryFilemapping:
+            trajectoryId = self.trajectoryFilemapping[fileprefix]["id"]
+            cf.uploadTrajectory(trajectoryId, 0, self.trajectoryFilemapping[fileprefix]["trajectory"])
 
     # Create publishers
     self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
