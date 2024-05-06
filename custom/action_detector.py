@@ -56,8 +56,9 @@ def euler_from_quaternion(x, y, z, w):
 
 class ActionDetector:
 
-    def __init__(self):
+    def __init__(self, shouldFlip=False):
         self.wandLowered = (False, None)
+        self.shouldFlip = shouldFlip
 
     # in the past x frames
 

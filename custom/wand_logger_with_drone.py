@@ -66,9 +66,9 @@ class WandFollower(Node):
         self.maxQueueSize = 50
         self.positionQueue = []
         self.rotationQueue = []
-        self.actionDetector = ActionDetector()
+        self.actionDetector = ActionDetector(shouldFlip=(self.player != 1))
 
-        self.pub = self.create_publisher(String, 'wandMovement' + self.player, 10)
+        self.pub = self.create_publisher(String, 'spell' + self.player, 10)
 
     def timer_cb(self):
         # Get state of wand
@@ -94,50 +94,6 @@ class WandFollower(Node):
             self.get_logger().info('Publishing: "%s"' % msg.data)
 
             return
-
-            if action == "detectRotateSide":
-                # shield
-                resetDrones(self.curSide, self.allcfs)
-
-                if self.curSide == "sideA":
-                    # self.allcfs.crazyfliesById[singleDroneId].startTrajectory(
-                    #     trajectoryFilemapping["triple_shield_left"]
-                    # )
-                    self.allcfs.crazyfliesById[singleDroneId].startTrajectory(
-                        trajectoryFilemapping["triple_shield_left"], 1.0, False
-                    )
-                    self.timeHelper.sleep(
-                        allTrajectories[
-                            trajectoryFilemapping["triple_shield_left"]
-                        ].duration
-                    )
-
-                    # self.allcfs.crazyfliesById["id_2"].startTrajectory(
-                    #     trajectoryFilemapping["triple_shield_center"]
-                    # )
-                    # self.allcfs.crazyfliesById["id_3"].startTrajectory(
-                    #     trajectoryFilemapping["triple_shield_right"]
-                    # )
-                self.timeHelper.sleep(3)  # TODO change duration
-                resetDrones(self.curSide, self.allcfs)
-
-            elif action == "detectRaiseWand":
-                resetDrones(self.curSide, self.allcfs)
-                if self.curSide == "sideA":
-                    # self.allcfs.crazyfliesById[singleDroneId].startTrajectory(
-                    #     trajectoryFilemapping["spiral"]
-                    # )
-                    self.allcfs.crazyfliesById[singleDroneId].startTrajectory(
-                        trajectoryFilemapping["spiral"], 1.0, False
-                    )
-
-                    # self.allcfs.crazyfliesById["id_2"].startTrajectory(trajectoryFilemapping["spiral"])
-                    # self.allcfs.crazyfliesById["id_3"].startTrajectory(trajectoryFilemapping["spiral"])
-                self.timeHelper.sleep(
-                    allTrajectories[trajectoryFilemapping["spiral"]].duration
-                )
-                resetDrones(self.curSide, self.allcfs)
-
             print(action)
             # rospy.loginfo(action)
             # self.pub.publish(action)
