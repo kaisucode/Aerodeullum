@@ -47,7 +47,7 @@ def euler_from_quaternion(x, y, z, w):
 class WandFollower(Node):
 
     def __init__(
-        self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=20, player
+            self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=20, player=1
     ):
         super().__init__("wand_follower_node")
         self.player = player
@@ -68,7 +68,7 @@ class WandFollower(Node):
         self.rotationQueue = []
         self.actionDetector = ActionDetector()
 
-        self.pub = self.create_publisher(String, 'wandMovement' + self.player, 10)
+        self.pub = self.create_publisher(String, 'wandMovement' + str(self.player), 10)
 
     def timer_cb(self):
         # Get state of wand
