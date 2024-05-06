@@ -6,6 +6,7 @@ from rclpy.node import Node
 import rospy
 from std_msgs.msg import Int32
 from std_msgs.msg import String
+import time
 
 from pathlib import Path
 from crazyflie_py.uav_trajectory import Trajectory
@@ -51,6 +52,8 @@ class DroneManagement(Node):
     self.groupState = groupState
     
     self.shield_duration = 6        # TODO change this to reflect actual length of shield spell through cooldown
+    self.protected_duration = 3 
+
     self.quick_attack_duration = 5
     self.heavy_attack_duration = 10
     self.hp = 100
@@ -63,6 +66,7 @@ class DroneManagement(Node):
     self.quick_attack_drones = []
     self.heavy_attack_drones = []
     self.shield_end_time = 0
+    self.protection_end_time = 0
     self.quick_attack_end_time = 0
     self.heavy_attack_end_time = 0
 
@@ -93,23 +97,32 @@ class DroneManagement(Node):
 
     if msg.data == 'detectRotateSide': # defend
         # If familiar is available, set defense spell flag to be triggered in loop
+        print("Player " + str(self.player+1) + " is trying to cast shield")
         if self.status[0] == 0:
-           self.defense_flag = True
+            self.defense_flag = True
+            print("Player " + str(self.player+1) + " casts shield!")
 
     elif msg.data == 'detectFastAttack': # quick attack
         # If a spell drone is available, set quick attack flag to be triggered in main loop
         if sum(self.status[1:]) >= 1:
-           self.quick_attack_flag = True
+            self.quick_attack_flag = True
+            print("Player " + str(self.player+1) + " casts quick attack!")
     elif msg.data == 'detectChargedAttack': # heavy attack
         if sum(self.status[1:]) >= 3:
-           self.heavy_attack_flag = True
+            self.heavy_attack_flag = True
+            print("Player " + str(self.player+1) + " casts heavy attack!")
 
   def damage_callback(self, msg):
-      if not self.shielding:
+
+      # if not self.shielding:
+      if time.time() > self.protection_end_time:
         self.hp -= msg.data
+        print("Player " + str(self.player+1) + " was struck for " + str(msg.data) + " damage! " + str(self.hp) + " HP remaining")
         # TODO change familiar HP light color
         # TODO stagger
         # TODO check if hp goes below 0, if so end game
+      else:
+         print("Attack blocked!")
   
   def shield(self, time):
     if self.status[0] == 0:
@@ -119,6 +132,7 @@ class DroneManagement(Node):
     # shield() call command to have familiar drone enact shield behavior
     self.cast_shield(self.groupState)
     self.shielding = True
+    self.protection_end_time = time + self.protected_duration
     self.shield_end_time = time + self.shield_duration
     return True
   
@@ -174,7 +188,7 @@ class DroneManagement(Node):
   def handle_player(self, time):
     # Handle losing
     if self.hp <= 0:
-       print("player " + self.player + " loses")
+       print("player " + str(self.player+1) + " loses")
        return False
     
     # Handle Shielding
