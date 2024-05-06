@@ -10,23 +10,27 @@ from pathlib import Path
 from crazyflie_py.uav_trajectory import Trajectory
 
 
-singleDroneId = 45
-dronePositions = {
-    "sideA": {
-        singleDroneId: [-3, -2, 1],
-        # "id_2": [-3, -1.5, 1.5],
-        # "id_3": [-3, -1, 1],
-        # "id_4": [-4, 2, 1],
-    },
-    # "sideB": {
-    #     "id_5": [3, 2.5, 1],
-    #     "id_6": [3, 2, 1.5],
-    #     "id_7": [3, 1.5, 1],
-    #     "id_8": [4, -1.5, 1],
-    # },
-}
+#  singleDroneId = 45
+#  dronePositions = {
+#      "sideA": {
+#          singleDroneId: [-3, -2, 1],
+#          # "id_2": [-3, -1.5, 1.5],
+#          # "id_3": [-3, -1, 1],
+#          # "id_4": [-4, 2, 1],
+#      },
+#      # "sideB": {
+#      #     "id_5": [3, 2.5, 1],
+#      #     "id_6": [3, 2, 1.5],
+#      #     "id_7": [3, 1.5, 1],
+#      #     "id_8": [4, -1.5, 1],
+#      # },
+#  }
 
-trajectoryNames = ["triple_shield_center", "triple_shield_left", "triple_shield_right", "spiral", "single_shield", "helix"]
+dronePositions = [ 
+                  [ [-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1], [-4, 2, 1] ]
+                  [ [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1], [4, -1.5, 1] ] ]
+
+trajectoryNames = ["triple_shield_center", "triple_shield_left", "triple_shield_right", "spiral", "single_shield", "helix1", "helix2", "helix3"]
 
 def loadTrajectories():
     trajectoryFilemapping = {} # {"name": {"trajectory", "id"}}
@@ -148,9 +152,9 @@ class DroneManagement(Node):
   # Trigger shield movement behavior
   def cast_shield(self, groupState):
 
-    trajId, traj = self.getTrajectory("triple_shield_left")
+    trajId, traj = self.getTrajectory("single_shield")
     groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
-    executeDuration = traj.duration
+    #executeDuration = traj.duration
     # sleep for the above duration
     return
 
@@ -158,17 +162,26 @@ class DroneManagement(Node):
   def cast_quick_attack(self, groupState, quick_attack_drone):
 
     trajId, traj = self.getTrajectory("spiral")
-    groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
-    executeDuration = traj.duration
+    groupState.crazyflies[quick_attack_drone].startTrajectory(trajId, 1.0, False)
 
     return
   
   # Trigger quick_attack movement behavior
   def cast_heavy_attack(self, groupState):
      # TODO select drones from heavy_attack_drones and trigger behavior
-     return
-     
 
+    trajId1, traj = self.getTrajectory("helix1")
+    trajId2, traj = self.getTrajectory("helix2")
+    trajId3, traj = self.getTrajectory("helix3")
+    groupState.crazyflies[1].startTrajectory(trajId1, 1.0, False)
+    groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
+    groupState.crazyflies[3].startTrajectory(trajId3, 1.0, False)
+    return
+  
+  def initialize_drone_position(self, groupState, droneIndex, player): 
+    side = player - 1
+    groupState.crazyflies[droneIndex].goTo(np.asarray(dronePositions[side][droneIndex]), 0, 5.0)
+    groupState.timeHelper.sleep(3)
   
   def handle_player(self, time):
     # Handle losing
