@@ -83,11 +83,11 @@ class DroneManagement(Node):
 
         # Create publishers
         # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
-        self.damage_pub = self.create_publisher(Int32, "damage" + str(self.player), 10)
+        self.damage_pub = self.create_publisher(Int32, "damage" + str(self.player+1), 10)
 
         # Create Subscribers
-        self.spell_subscriber = self.create_subscription(String, 'spell'+str(self.player), self.spell_callback, 1)
-        self.damage_subscriber = self.create_subscription(Int32, "damage" + ("1" if self.player == 0 else "0"), self.damage_callback, 1)
+        self.spell_subscriber = self.create_subscription(String, 'spell'+str(self.player+1), self.spell_callback, 1)
+        self.damage_subscriber = self.create_subscription(Int32, "damage" + ("1" if self.player == 0 else "2"), self.damage_callback, 1)
 
     def getTrajectory(self, trajName): 
         return self.trajectoryFilemapping[trajName]["id"], self.trajectoryFilemapping[trajName]["trajectory"]
