@@ -90,7 +90,7 @@ class DroneManagement(Node):
     self.damage_subscriber = self.create_subscription(Int32, "damage" + ("1" if self.player == 0 else "0"), self.damage_callback, 1)
 
   def getTrajectory(self, trajName): 
-      return trajectoryFilemapping[trajName]["id"], trajectoryFilemapping[trajName]["trajectory"]
+      return self.trajectoryFilemapping[trajName]["id"], self.trajectoryFilemapping[trajName]["trajectory"]
 
   def spell_callback(self, msg):
     """
