@@ -9,7 +9,7 @@ import queue
    
 def main():
     sim = False
-    multiplayer = True
+    multiplayer = False
     if sim:
         # Use sim version of crazyswarm
         from pycrazyswarm import Crazyswarm
