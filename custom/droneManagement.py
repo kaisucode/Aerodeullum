@@ -31,7 +31,7 @@ dronePositions = [
         [ [-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1], [-4, 2, 1] ],
         [ [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1], [4, -1.5, 1] ] ]
 
-trajectoryNames = ["triple_shield_center", "triple_shield_left", "triple_shield_right", "spiral", "single_shield", "helix1", "helix2", "helix3"]
+trajectoryNames = ["spiral", "single_shield", "helix1", "helix2", "helix3", "spiral2"]
 
 def loadTrajectories():
     trajectoryFilemapping = {} # {"name": {"trajectory", "id"}}
@@ -171,7 +171,7 @@ class DroneManagement(Node):
 
     # Trigger quick_attack movement behavior
     def cast_quick_attack(self, groupState, quick_attack_drone):
-        trajId, traj = self.getTrajectory("spiral")
+        trajId, traj = self.getTrajectory("spiral2")
         groupState.crazyflies[quick_attack_drone].startTrajectory(trajId, 1.0, False)
         return
 
