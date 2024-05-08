@@ -27,32 +27,48 @@ from crazyflie_py.uav_trajectory import Trajectory
 #      # },
 #  }
 
-dronePositions = [ 
-        [ [-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1], [-4, 2, 1] ],
-        [ [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1], [4, -1.5, 1] ] ]
+dronePositions = [
+    [[-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1], [-4, 2, 1]],
+    [[3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1], [4, -1.5, 1]],
+]
 
-trajectoryNames = ["spiral", "single_shield", "helix1", "helix2", "helix3", "spiral2", "stagger"]
+trajectoryNames = [
+    "spiral",
+    "single_shield",
+    "helix1",
+    "helix2",
+    "helix3",
+    "spiral2",
+    "stagger",
+]
+
 
 def loadTrajectories():
-    trajectoryFilemapping = {} # {"name": {"trajectory", "id"}}
+    trajectoryFilemapping = {}  # {"name": {"trajectory", "id"}}
     trajId = 0
     for fileprefix in trajectoryNames:
         trajectoryFilemapping[fileprefix] = {"id": trajId, "trajectory": Trajectory()}
         filename = "aero/" + fileprefix + ".csv"
-        trajectoryFilemapping[fileprefix]["trajectory"].loadcsv(Path(__file__).parent / filename)
+        trajectoryFilemapping[fileprefix]["trajectory"].loadcsv(
+            Path(__file__).parent / filename
+        )
         trajId += 1
     return trajectoryFilemapping
 
+
 class DroneManagement(Node):
     def __init__(self, groupState, player):
-        super().__init__('drone_management' + str(player))
-        self.crazyflies = groupState.crazyflies[:] # familiar crazyflie is 0, rest are spell
+        super().__init__("drone_management" + str(player))
+        self.crazyflies = groupState.crazyflies[
+            :
+        ]  # familiar crazyflie is 0, rest are spell
         self.player = player
-        self.status = np.zeros(len(self.crazyflies)) # 0 is available, 1 is busy
+        self.status = np.ones(len(self.crazyflies))  # 0 is available, 1 is busy
         self.shield_flag = False
         self.quick_attack_flag = False
         self.heavy_attack_flag = False
         self.groupState = groupState
+        self.max_game_duration = 120
 
         # load trajectories based on csv files, and upload to the drones
         # key: numeric id, value: trajectory
@@ -60,24 +76,38 @@ class DroneManagement(Node):
         for cf in self.crazyflies:
             for fileprefix in self.trajectoryFilemapping:
                 trajectoryId = self.trajectoryFilemapping[fileprefix]["id"]
-                cf.uploadTrajectory(trajectoryId, 0, self.trajectoryFilemapping[fileprefix]["trajectory"])
+                cf.uploadTrajectory(
+                    trajectoryId,
+                    0,
+                    self.trajectoryFilemapping[fileprefix]["trajectory"],
+                )
 
         # Set default behavior durations TODO Remove if trajectory timing works
-        self.shield_duration = 6     
-        self.protected_duration = 3 
+        self.shield_duration = 6
+        self.protected_duration = 3
         self.stagger_duration = 3
         self.quick_attack_duration = 5
         self.heavy_attack_duration = 10
 
         # Compute actual trajectory durations
-        self.shield_duration = self.trajectoryFilemapping["single_shield"]["trajectory"].duration
-        self.quick_attack_duration = self.trajectoryFilemapping["spiral"]["trajectory"].duration
-        self.heavy_attack_duration = max([self.trajectoryFilemapping["helix1"]["trajectory"].duration, 
-                                           self.trajectoryFilemapping["helix2"]["trajectory"].duration,
-                                           self.trajectoryFilemapping["helix3"]["trajectory"].duration])
-        self.stagger_duration = self.trajectoryFilemapping["stagger"]["trajectory"].duration
-        
-        # Gameplay statistics 
+        self.shield_duration = self.trajectoryFilemapping["single_shield"][
+            "trajectory"
+        ].duration
+        self.quick_attack_duration = self.trajectoryFilemapping["spiral"][
+            "trajectory"
+        ].duration
+        self.heavy_attack_duration = max(
+            [
+                self.trajectoryFilemapping["helix1"]["trajectory"].duration,
+                self.trajectoryFilemapping["helix2"]["trajectory"].duration,
+                self.trajectoryFilemapping["helix3"]["trajectory"].duration,
+            ]
+        )
+        self.stagger_duration = self.trajectoryFilemapping["stagger"][
+            "trajectory"
+        ].duration
+
+        # Gameplay statistics
         self.hp = 100
         self.quick_attack_damage = 10
         self.heavy_attack_damage = 50
@@ -100,31 +130,57 @@ class DroneManagement(Node):
         self.damage_pub = self.create_publisher(Int32, "damage" + str(self.player), 10)
 
         # Create Subscribers
-        self.spell_subscriber = self.create_subscription(String, 'spell'+str(self.player), self.spell_callback, 1)
-        self.damage_subscriber = self.create_subscription(Int32, "damage" + ("2" if self.player == 1 else "1"), self.damage_callback, 1)
+        self.spell_subscriber = self.create_subscription(
+            String, "spell" + str(self.player), self.spell_callback, 1
+        )
+        print("made subscriber", "spell" + str(self.player))
+        self.damage_subscriber = self.create_subscription(
+            Int32,
+            "damage" + ("2" if self.player == 1 else "1"),
+            self.damage_callback,
+            1,
+        )
+        self.Hz = 5
+        self.call_timer = self.create_timer(1 / self.Hz, self.timer_cb)
 
-    def getTrajectory(self, trajName): 
-        return self.trajectoryFilemapping[trajName]["id"], self.trajectoryFilemapping[trajName]["trajectory"]
+    def timer_cb(self):
+        curr_time = time.time()
+        self.handle_player(curr_time)
+        if self.hp <= 0:
+            print("Game over: " + ("player 1 " if self.player == 2 else "player 2 ") + "wins!")
+            self.destroy_node()
+        if curr_time > self.max_time:
+            print("Game over: time exceeded")
+            self.destroy_node()
+
+
+    def getTrajectory(self, trajName):
+        return (
+            self.trajectoryFilemapping[trajName]["id"],
+            self.trajectoryFilemapping[trajName]["trajectory"],
+        )
 
     def spell_callback(self, msg):
         """
         Spell callback method, called everytime a message is published to the topic /spell
         triggers behavior corresponding to received spell command
         """
-        print("message", msg)
-        if msg.data == 'detectRotateSide': # defend
+        print("message", msg.data)
+        if msg.data == "detectRotateSide":  # defend
             # If familiar is available, set defense spell flag to be triggered in loop
             print("Player " + str(self.player) + " is trying to cast shield")
-            if self.status[0] == 0:
+            if self.status[0] == 1:
                 self.defense_flag = True
                 print("Player " + str(self.player) + " casts shield!")
 
-        elif msg.data == 'detectFastAttack': # quick attack
+        elif msg.data == "detectFastAttack":  # quick attack
+            print(self.status)
             # If a spell drone is available, set quick attack flag to be triggered in main loop
             if sum(self.status[1:]) >= 1:
                 self.quick_attack_flag = True
                 print("Player " + str(self.player) + " casts quick attack!")
-        elif msg.data == 'detectChargedAttack': # heavy attack
+        elif msg.data == "detectChargedAttack":  # heavy attack
+            print(self.status)
             if sum(self.status[1:]) >= 3:
                 self.heavy_attack_flag = True
                 print("Player " + str(self.player) + " casts heavy attack!")
@@ -134,9 +190,17 @@ class DroneManagement(Node):
         curr_time = time.time()
         if curr_time > self.protection_end_time:
             self.hp -= msg.data
-            print("Player " + str(self.player) + " was struck for " + str(msg.data) + " damage! " + str(self.hp) + " HP remaining")
+            print(
+                "Player "
+                + str(self.player)
+                + " was struck for "
+                + str(msg.data)
+                + " damage! "
+                + str(self.hp)
+                + " HP remaining"
+            )
             self.staggered = True
-            self.stagger_end_time = curr_time + self.stagger_duration 
+            self.stagger_end_time = curr_time + self.stagger_duration
             # TODO change familiar HP light color
             # TODO stagger
             # TODO check if hp goes below 0, if so end game
@@ -165,8 +229,12 @@ class DroneManagement(Node):
             # Error, not enough drones
             print("Error: not enough drones available")
         else:
-            self.cast_quick_attack(self.groupState, self.quick_attack_drones[0]) # TODO pass in specific quick attack drone
-            self.status[self.quick_attack_drones] = 0 # TODO make sure these indices account for the slice
+            self.cast_quick_attack(
+                self.groupState, self.quick_attack_drones[0]
+            )  # TODO pass in specific quick attack drone
+            self.status[self.quick_attack_drones] = (
+                0  # TODO make sure these indices account for the slice
+            )
             self.quick_attack_end_time = time + self.quick_attack_duration
 
     def heavy_attack(self, time):
@@ -179,7 +247,9 @@ class DroneManagement(Node):
             print("Error: not enough drones available")
         else:
             self.cast_heavy_attack(self.groupState)
-            self.status[self.heavy_attack_drones] = 0 # TODO make sure these indices account for the slice
+            self.status[self.heavy_attack_drones] = (
+                0  # TODO make sure these indices account for the slice
+            )
             self.heavy_attack_end_time = time + self.heavy_attack_duration
 
     # Trigger shield movement behavior
@@ -187,7 +257,7 @@ class DroneManagement(Node):
         print("Casting shield")
         trajId, traj = self.getTrajectory("single_shield")
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
-        #executeDuration = traj.duration
+        # executeDuration = traj.duration
         # sleep for the above duration
         return
 
@@ -208,15 +278,19 @@ class DroneManagement(Node):
         groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
         groupState.crazyflies[3].startTrajectory(trajId3, 1.0, False)
         return
-    
+
     def cast_stagger(self, groupState):
-        #TODO 
+        # TODO
         return
 
-    def initialize_drone_position(self, groupState, droneIndex, player): 
+    def initialize_drone_position(self, groupState, droneIndex, player):
         side = player - 1
-        groupState.crazyflies[droneIndex].goTo(np.asarray(dronePositions[side][droneIndex]), 0, 5.0)
+        groupState.crazyflies[droneIndex].goTo(
+            np.asarray(dronePositions[side][droneIndex]), 0, 5.0
+        )
         groupState.timeHelper.sleep(3)
+        self.status = np.ones(len(self.crazyflies))
+        self.max_time = time.time() + self.max_game_duration
 
     def handle_player(self, time):
         print("Handling player ", self.player)
@@ -226,30 +300,34 @@ class DroneManagement(Node):
             return False
 
         # Handle Shielding
-        if self.shield_flag == True: # Cast Shield
+        if self.shield_flag == True:  # Cast Shield
             self.shield(time)
-        if self.shielding and time >= self.shield_end_time: # Reset shield
+        if self.shielding and time >= self.shield_end_time:  # Reset shield
             self.shielding = False
             self.status[0] = 1
-        if self.staggered and time >= self.stagger_end_time: # Reset stagger
+        if self.staggered and time >= self.stagger_end_time:  # Reset stagger
             self.staggered = False
 
-        #Handle Quick Attacks
+        # Handle Quick Attacks
         # TODO maybe update this to allow for multiple quick attacks in series while the previous one is cooling down
-        if self.quick_attack_flag == True: # Cast Quick Attack
+        if self.quick_attack_flag == True:  # Cast Quick Attack
             # start quick attack  movement and set timer for shield to sleep
             self.quick_attack(time)
-        if self.quick_attacking and time >= self.quick_attack_end_time: # Reset quick attack
+        if (
+            self.quick_attacking and time >= self.quick_attack_end_time
+        ):  # Reset quick attack
             self.damage_pub.publish(self.quick_attack_damage)
             self.quick_attacking = False
             self.status[self.quick_attack_drones] = 1
             self.quick_attack_drones = []
 
         # Handle Heavy Attacks
-        if self.heavy_attack_flag == True: # Cast Quick Attack
+        if self.heavy_attack_flag == True:  # Cast Quick Attack
             # start quick attack  movement and set timer for shield to sleep
             self.heavy_attack(time)
-        if self.heavy_attacking and time >= self.heavy_attack_end_time: # Reset quick attack
+        if (
+            self.heavy_attacking and time >= self.heavy_attack_end_time
+        ):  # Reset quick attack
             self.damage_pub.publish(self.heavy_attack_damage)
             self.heavy_attacking = False
             self.status[self.heavy_attack_drones] = 1
@@ -257,5 +335,3 @@ class DroneManagement(Node):
 
         # Return true if game isn't over
         return True
-
-
