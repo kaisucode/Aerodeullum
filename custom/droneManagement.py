@@ -235,13 +235,14 @@ class DroneManagement(Node):
         print("Casting quick attack")
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "spiral")
-        groupState.crazyflies[quick_attack_drone].startTrajectory(trajId, 1.0, False)
+        groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 1.0, False)
         return
 
     # Trigger quick_attack movement behavior
     def cast_heavy_attack(self, groupState):
         print("Casting heavy attack")
-        player_prefix = "p" + str(self.player) + "_"
+        #  player_prefix = "p" + str(self.player) + "_"
+        player_prefix = "p" + "2" + "_"
         trajId1, traj = self.getTrajectory(player_prefix + "helix1")
         trajId2, traj = self.getTrajectory(player_prefix + "helix2")
         trajId3, traj = self.getTrajectory(player_prefix + "helix3")
