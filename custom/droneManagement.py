@@ -112,6 +112,7 @@ class DroneManagement(Node):
         self.call_timer = self.create_timer(1 / self.Hz, self.timer_cb)
 
     def timer_cb(self):
+        print("in timer cb", end="")
         curr_time = time.time()
         self.handle_player(curr_time)
         if self.hp <= 0:
@@ -192,8 +193,9 @@ class DroneManagement(Node):
         self.quick_attack_flag = False
         # select available drone
         self.quick_attack_drones = np.where(self.status == 1)
+        print("quick attack drones ", self.quick_attack_drones)
         if len(self.quick_attack_drones) < 1 or self.heavy_attacking:
-            print("Error: not enough drones available")
+            print("Error: not enough drones available", self.status, ", ", self.heavy_attacking)
         else:
             self.cast_quick_attack(
                 self.groupState, self.quick_attack_drones[0]
@@ -209,7 +211,7 @@ class DroneManagement(Node):
         self.heavy_attack_drones = np.where(self.status == 1)
         if len(self.heavy_attack_drones) < 3 or self.quick_attacking:
             # Error, not enough drones
-            print("Error: not enough drones available")
+            print("Error: not enough drones available", self.status, ", ", self.quick_attacking)
         else:
             self.cast_heavy_attack(self.groupState)
             self.heavy_attacking = True
@@ -256,13 +258,13 @@ class DroneManagement(Node):
     def initialize_drone_position(self, groupState, droneIndex, player):
         side = player - 1
         groupState.crazyflies[droneIndex].goTo(
-            np.asarray(dronePositions[side][droneIndex]), 0, 5.0
+            np.asarray(dronePositions[side][droneIndex]), 0, 3.0
         )
         groupState.timeHelper.sleep(3)
         self.max_time = time.time() + self.max_game_duration
 
     def handle_player(self, time):
-        # print("Handling player ", self.player)
+        print("Handling player ", self.player)
         # Handle losing
         if self.hp <= 0:
             print("player " + str(self.player) + " loses")
@@ -270,6 +272,7 @@ class DroneManagement(Node):
 
         # Handle Shielding
         if self.shield_flag == True:  # Cast Shield
+            print("handle player - shield")
             self.shield(time)
         if self.shielding and time >= self.shield_end_time:  # Reset shield
             self.shielding = False
