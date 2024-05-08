@@ -182,7 +182,7 @@ if __name__ == "__main__":
         except:
             print("nooooool")
 
-    wand_node = WandFollower(allcfs, timeHelper, "sideA")
+    wand_node = WandFollower(allcfs, timeHelper, 1)
 
     # executor = rclpy.Executor()
     # executor = MultiThreadedExecutor(num_threads=2)
