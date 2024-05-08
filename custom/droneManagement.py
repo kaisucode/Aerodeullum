@@ -62,30 +62,38 @@ class DroneManagement(Node):
                 trajectoryId = self.trajectoryFilemapping[fileprefix]["id"]
                 cf.uploadTrajectory(trajectoryId, 0, self.trajectoryFilemapping[fileprefix]["trajectory"])
 
-        #  self.shield_duration = self.trajectoryFilemapping["single_shield"]["trajectory"].duration
-        #  self.quick_attack_duration = self.trajectoryFilemapping["single_shield"]["spiral"].duration
-        #  self.heavy_attack_duration = max([self.trajectoryFilemapping["single_shield"]["helix1"].duration, 
-        #                                    self.trajectoryFilemapping["single_shield"]["helix2"].duration,
-        #                                    self.trajectoryFilemapping["single_shield"]["helix3"].duration])
-
-        self.shield_duration = 6        # TODO change this to reflect actual length of shield spell through cooldown
+        # Set default behavior durations TODO Remove if trajectory timing works
+        self.shield_duration = 6     
         self.protected_duration = 3 
-
+        self.stagger_duration = 3
         self.quick_attack_duration = 5
         self.heavy_attack_duration = 10
+
+        # Compute actual trajectory durations
+        self.shield_duration = self.trajectoryFilemapping["single_shield"]["trajectory"].duration
+        self.quick_attack_duration = self.trajectoryFilemapping["single_shield"]["spiral"].duration
+        self.heavy_attack_duration = max([self.trajectoryFilemapping["single_shield"]["helix1"].duration, 
+                                           self.trajectoryFilemapping["single_shield"]["helix2"].duration,
+                                           self.trajectoryFilemapping["single_shield"]["helix3"].duration])
+        self.stagger_duration = self.trajectoryFilemapping["stagger"].duration
+        
+        # Gameplay statistics 
         self.hp = 100
         self.quick_attack_damage = 10
         self.heavy_attack_damage = 50
 
+        # Game Variables
         self.shielding = False
         self.quick_attacking = False
         self.heavy_attacking = False
+        self.staggered = False
         self.quick_attack_drones = []
         self.heavy_attack_drones = []
         self.shield_end_time = 0
         self.protection_end_time = 0
         self.quick_attack_end_time = 0
         self.heavy_attack_end_time = 0
+        self.stagger_end_time = 0
 
         # Create publishers
         # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
@@ -122,9 +130,12 @@ class DroneManagement(Node):
 
     def damage_callback(self, msg):
         # if not self.shielding:
-        if time.time() > self.protection_end_time:
+        curr_time = time.time()
+        if curr_time > self.protection_end_time:
             self.hp -= msg.data
             print("Player " + str(self.player) + " was struck for " + str(msg.data) + " damage! " + str(self.hp) + " HP remaining")
+            self.staggered = True
+            self.stagger_end_time = curr_time + self.stagger_duration 
             # TODO change familiar HP light color
             # TODO stagger
             # TODO check if hp goes below 0, if so end game
@@ -132,7 +143,7 @@ class DroneManagement(Node):
             print("Attack blocked!")
 
     def shield(self, time):
-        if self.status[0] == 0:
+        if self.status[0] == 0 or time < self.staggered:
             return False
         self.shield_flag = False
         self.status[0] = 0
@@ -190,6 +201,10 @@ class DroneManagement(Node):
         groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
         groupState.crazyflies[3].startTrajectory(trajId3, 1.0, False)
         return
+    
+    def cast_stagger(self, groupState):
+        #TODO 
+        return
 
     def initialize_drone_position(self, groupState, droneIndex, player): 
         side = player - 1
@@ -208,6 +223,8 @@ class DroneManagement(Node):
         if self.shielding and time >= self.shield_end_time: # Reset shield
             self.shielding = False
             self.status[0] = 1
+        if self.staggered and time >= self.stagger_end_time: # Reset stagger
+            self.staggered = False
 
         #Handle Quick Attacks
         # TODO maybe update this to allow for multiple quick attacks in series while the previous one is cooling down
