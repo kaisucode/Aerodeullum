@@ -72,10 +72,14 @@ class ActionDetector:
     def detectHorizontal(self, positions, rotations, moveThreshold=1.5):
         diffAcrossFrames = positions.max(axis=0) - positions.min(axis=0)
         # print(diffAcrossFrames)
+
+        if self.shouldFlip: 
+            moveThreshold *= -1
+
         fitsCriteria = (
-            diffAcrossFrames[0] >= moveThreshold
-            and diffAcrossFrames[1] < moveThreshold
-            and diffAcrossFrames[2] < moveThreshold
+            abs(diffAcrossFrames[0]) < abs(moveThreshold)
+            and diffAcrossFrames[1] > moveThreshold
+            and abs(diffAcrossFrames[2]) < abs(moveThreshold)
         )
         # print("detect hori fit? ", fitsCriteria)
 
@@ -103,8 +107,8 @@ class ActionDetector:
         # print(diffAcrossFrames)
         fitsCriteria = (
             diffAcrossFrames[0] < moveThreshold
-            and diffAcrossFrames[1] < moveThreshold
-            and diffAcrossFrames[2] >= moveThreshold
+            and diffAcrossFrames[1] >= moveThreshold
+            and diffAcrossFrames[2] < moveThreshold
         )
         return fitsCriteria
 
@@ -112,9 +116,8 @@ class ActionDetector:
         diffAcrossFrames = positions.max(axis=1) - positions.min(axis=1)
 
         fitsCriteria = (
-            diffAcrossFrames[0] < moveThreshold
-            and diffAcrossFrames[1] < moveThreshold
-            and diffAcrossFrames[2] >= moveThreshold  # z axis can be whatever
+            abs(diffAcrossFrames[1]) < abs(moveThreshold)
+            and diffAcrossFrames[2] <= moveThreshold  # z axis can be whatever
         )
 
         self.wandLowered = (True, time.time())
