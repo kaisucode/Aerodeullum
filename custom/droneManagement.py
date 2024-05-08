@@ -31,16 +31,20 @@ dronePositions = [
         [ [-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1], [-4, 2, 1] ],
         [ [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1], [4, -1.5, 1] ] ]
 
-trajectoryNames = ["spiral", "single_shield", "helix1", "helix2", "helix3", "spiral2", "stagger"]
+#  trajectoryNames = ["spiral", "single_shield", "helix1", "helix2", "helix3", "spiral2", "stagger"]
+trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield"]
 
 def loadTrajectories():
     trajectoryFilemapping = {} # {"name": {"trajectory", "id"}}
     trajId = 0
     for fileprefix in trajectoryNames:
-        trajectoryFilemapping[fileprefix] = {"id": trajId, "trajectory": Trajectory()}
-        filename = "aero/" + fileprefix + ".csv"
-        trajectoryFilemapping[fileprefix]["trajectory"].loadcsv(Path(__file__).parent / filename)
-        trajId += 1
+        
+        for player in ["p1_", "p2_"]: 
+            trajName = player + fileprefix
+            trajectoryFilemapping[trajName] = {"id": trajId, "trajectory": Trajectory()}
+            filename = "aero/" + trajName + ".csv"
+            trajectoryFilemapping[trajName]["trajectory"].loadcsv(Path(__file__).parent / filename)
+            trajId += 1
     return trajectoryFilemapping
 
 class DroneManagement(Node):
@@ -70,12 +74,12 @@ class DroneManagement(Node):
         self.heavy_attack_duration = 10
 
         # Compute actual trajectory durations
-        self.shield_duration = self.trajectoryFilemapping["single_shield"]["trajectory"].duration
-        self.quick_attack_duration = self.trajectoryFilemapping["spiral"]["trajectory"].duration
-        self.heavy_attack_duration = max([self.trajectoryFilemapping["helix1"]["trajectory"].duration, 
-                                           self.trajectoryFilemapping["helix2"]["trajectory"].duration,
-                                           self.trajectoryFilemapping["helix3"]["trajectory"].duration])
-        self.stagger_duration = self.trajectoryFilemapping["stagger"]["trajectory"].duration
+        self.shield_duration = self.trajectoryFilemapping["p1_single_shield"]["trajectory"].duration
+        self.quick_attack_duration = self.trajectoryFilemapping["p1_spiral"]["trajectory"].duration
+        self.heavy_attack_duration = max([self.trajectoryFilemapping["p1_helix1"]["trajectory"].duration, 
+                                           self.trajectoryFilemapping["p1_helix2"]["trajectory"].duration,
+                                           self.trajectoryFilemapping["p1_helix3"]["trajectory"].duration])
+        self.stagger_duration = self.trajectoryFilemapping["p1_familiar"]["trajectory"].duration
         
         # Gameplay statistics 
         self.hp = 100
@@ -185,7 +189,9 @@ class DroneManagement(Node):
     # Trigger shield movement behavior
     def cast_shield(self, groupState):
         print("Casting shield")
-        trajId, traj = self.getTrajectory("single_shield")
+
+        player_prefix = "p" + str(self.player) + "_"
+        trajId, traj = self.getTrajectory(player_prefix + "single_shield")
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
         #executeDuration = traj.duration
         # sleep for the above duration
@@ -194,23 +200,27 @@ class DroneManagement(Node):
     # Trigger quick_attack movement behavior
     def cast_quick_attack(self, groupState, quick_attack_drone):
         print("Casting quick attack")
-        trajId, traj = self.getTrajectory("spiral2")
+        player_prefix = "p" + str(self.player) + "_"
+        trajId, traj = self.getTrajectory(player_prefix + "spiral")
         groupState.crazyflies[quick_attack_drone].startTrajectory(trajId, 1.0, False)
         return
 
     # Trigger quick_attack movement behavior
     def cast_heavy_attack(self, groupState):
         print("Casting heavy attack")
-        trajId1, traj = self.getTrajectory("helix1")
-        trajId2, traj = self.getTrajectory("helix2")
-        trajId3, traj = self.getTrajectory("helix3")
+        player_prefix = "p" + str(self.player) + "_"
+        trajId1, traj = self.getTrajectory(player_prefix + "helix1")
+        trajId2, traj = self.getTrajectory(player_prefix + "helix2")
+        trajId3, traj = self.getTrajectory(player_prefix + "helix3")
         groupState.crazyflies[1].startTrajectory(trajId1, 1.0, False)
         groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
         groupState.crazyflies[3].startTrajectory(trajId3, 1.0, False)
         return
     
     def cast_stagger(self, groupState):
-        #TODO 
+        player_prefix = "p" + str(self.player) + "_"
+        trajId, traj = self.getTrajectory(player_prefix + "familiar")
+        groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
         return
 
     def initialize_drone_position(self, groupState, droneIndex, player): 
