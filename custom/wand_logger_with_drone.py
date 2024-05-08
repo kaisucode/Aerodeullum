@@ -55,7 +55,7 @@ class WandFollower(Node):
         timeHelper,
         curSide="sideA",
         max_speed=0.5,
-        update_frequency=30,
+        update_frequency=10,
         player=1,
     ):
         super().__init__("wand_follower_node" + str(player))
@@ -77,7 +77,7 @@ class WandFollower(Node):
         self.rotationQueue = []
         self.actionDetector = ActionDetector(shouldFlip=(self.player != 1))
 
-        self.pub = self.create_publisher(String, "spell" + str(self.player), 30)
+        self.pub = self.create_publisher(String, "spell" + str(self.player), 10)
         print("spell" + str(self.player))
 
     def timer_cb(self):
