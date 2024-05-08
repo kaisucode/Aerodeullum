@@ -33,6 +33,7 @@ def main():
         
         groupState = SimpleNamespace(crazyflies=crazyflies, timeHelper=timeHelper)
 
+    print("Setting up game, multiplayer is ", ("on" if multiplayer else "off"))
     # Create groups for each player's drones
     p1_crazyflies = SimpleNamespace(crazyflies=crazyflies[0:4], timeHelper=timeHelper)
     # Start Wand Follower Nodes
@@ -44,9 +45,11 @@ def main():
         p2_wand_node = WandFollower(p2_crazyflies, timeHelper, player=2)
         p2_dm = DroneManagement(p2_crazyflies, player=2)
 
+    print("Taking off")
     takeoff(groupState, 1.0, 3)
     timeHelper.sleep(3.0)
 
+    print("Going to start positions")
     for idx in range(4): 
         p1_dm.initialize_drone_position(p1_dm.groupState, idx, 1)
         if multiplayer:
@@ -56,6 +59,7 @@ def main():
     p1 = True 
     p2 = True
     max_time = time.time() + 120
+    print("Starting game loop")
     while p1 and p2 and time.time() < max_time:
       cur_time = time.time()
       # Handle Player 1

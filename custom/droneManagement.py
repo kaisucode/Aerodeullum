@@ -111,6 +111,7 @@ class DroneManagement(Node):
         Spell callback method, called everytime a message is published to the topic /spell
         triggers behavior corresponding to received spell command
         """
+        print("message", msg)
         if msg.data == 'detectRotateSide': # defend
             # If familiar is available, set defense spell flag to be triggered in loop
             print("Player " + str(self.player) + " is trying to cast shield")
