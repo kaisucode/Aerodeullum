@@ -31,7 +31,7 @@ dronePositions = [
         [ [-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1], [-4, 2, 1] ],
         [ [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1], [4, -1.5, 1] ] ]
 
-trajectoryNames = ["spiral", "single_shield", "helix1", "helix2", "helix3", "spiral2"]
+trajectoryNames = ["spiral", "single_shield", "helix1", "helix2", "helix3", "spiral2", "stagger"]
 
 def loadTrajectories():
     trajectoryFilemapping = {} # {"name": {"trajectory", "id"}}
@@ -71,11 +71,11 @@ class DroneManagement(Node):
 
         # Compute actual trajectory durations
         self.shield_duration = self.trajectoryFilemapping["single_shield"]["trajectory"].duration
-        self.quick_attack_duration = self.trajectoryFilemapping["single_shield"]["spiral"].duration
-        self.heavy_attack_duration = max([self.trajectoryFilemapping["single_shield"]["helix1"].duration, 
-                                           self.trajectoryFilemapping["single_shield"]["helix2"].duration,
-                                           self.trajectoryFilemapping["single_shield"]["helix3"].duration])
-        self.stagger_duration = self.trajectoryFilemapping["stagger"].duration
+        self.quick_attack_duration = self.trajectoryFilemapping["spiral"]["trajectory"].duration
+        self.heavy_attack_duration = max([self.trajectoryFilemapping["helix1"]["trajectory"].duration, 
+                                           self.trajectoryFilemapping["helix2"]["trajectory"].duration,
+                                           self.trajectoryFilemapping["helix3"]["trajectory"].duration])
+        self.stagger_duration = self.trajectoryFilemapping["stagger"]["trajectory"].duration
         
         # Gameplay statistics 
         self.hp = 100
