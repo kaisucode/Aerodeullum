@@ -192,7 +192,7 @@ class DroneManagement(Node):
         print("trying to cast quick attack")
         self.quick_attack_flag = False
         # select available drone
-        self.quick_attack_drones = np.where(self.status == 1)
+        self.quick_attack_drones = np.where(self.status == 1)[0]
         print("quick attack drones ", self.quick_attack_drones)
         if len(self.quick_attack_drones) < 1 or self.heavy_attacking:
             print("Error: not enough drones available", self.status, ", ", self.heavy_attacking, "len: ", len(self.quick_attack_drones))
@@ -208,7 +208,7 @@ class DroneManagement(Node):
         print("trying to cast heavy attack")
         self.heavy_attack_flag = False
         # select available drone
-        self.heavy_attack_drones = np.where(self.status == 1)
+        self.heavy_attack_drones = np.where(self.status == 1)[0]
         print("heavy attack drones ", self.heavy_attack_drones)
         if len(self.heavy_attack_drones) < 3 or self.quick_attacking:
             # Error, not enough drones
