@@ -71,8 +71,12 @@ def main():
           # Handle Player 2
           print("p2-", end="")
           rclpy.spin_once(p2_wand_node)
+          print("after wand 2")
           rclpy.spin_once(p2_dm)
+          print("after dm 2")
           p2 = p2_dm.handle_player(cur_time)
+          print("after handle player 2")
+      print("end of loop")
       
     print("Game over: " + ("player 1 " if p1 else "player 2 ") + "wins!")
     land(groupState, 0.01, 3)
