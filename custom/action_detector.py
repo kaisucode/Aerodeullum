@@ -2,6 +2,7 @@ import numpy as np
 import math
 import time
 
+
 def getData(filename):
     logfile = open(filename, "r")
     lines = logfile.readlines()
@@ -73,13 +74,10 @@ class ActionDetector:
         diffAcrossFrames = positions.max(axis=0) - positions.min(axis=0)
         # print(diffAcrossFrames)
 
-        if self.shouldFlip: 
-            moveThreshold *= -1
-
         fitsCriteria = (
-            abs(diffAcrossFrames[0]) < abs(moveThreshold)
+            diffAcrossFrames[0] < moveThreshold
             and diffAcrossFrames[1] > moveThreshold
-            and abs(diffAcrossFrames[2]) < abs(moveThreshold)
+            and diffAcrossFrames[2] < moveThreshold
         )
         # print("detect hori fit? ", fitsCriteria)
 
@@ -91,14 +89,19 @@ class ActionDetector:
         # if np.sum(diffAcrossFrames) > 0:
         #     print(diffAcrossFrames)
         fitsCriteria = (
-            diffAcrossFrames[0] < moveThreshold
-            and diffAcrossFrames[1] < moveThreshold
-            and diffAcrossFrames[2] >= moveThreshold
+            diffAcrossFrames[0] < 1.0
+            and diffAcrossFrames[1] < 1.0
+            and diffAcrossFrames[2] >= 1.5
         )
         # print("raise wand fit? ", fitsCriteria)
+        if positions.argmin(axis=0)[2] > positions.argmax(axis=0)[2]:
+            fitsCriteria = False
+        # print(np.argmax(positions, axis=0))
+        # print(np.argmin(positions, axis=0))
+        # print("---")
         return fitsCriteria
 
-    def detectRotateSide(self, positions, rotations, moveThreshold=100):
+    def detectRotateSide(self, positions, rotations, moveThreshold=95):
 
         # print(euler_from_quaternion(*rotations[0]))
 
@@ -113,14 +116,20 @@ class ActionDetector:
         return fitsCriteria
 
     def detectLowerWand(self, positions, rotations, moveThreshold=1.0):
-        diffAcrossFrames = positions.max(axis=1) - positions.min(axis=1)
+        diffAcrossFrames = positions.max(axis=0) - positions.min(axis=0)
 
         fitsCriteria = (
-            abs(diffAcrossFrames[1]) < abs(moveThreshold)
-            and diffAcrossFrames[2] <= moveThreshold  # z axis can be whatever
+            # diffAcrossFrames[0] < moveThreshold
+            diffAcrossFrames[1] < 1.0
+            and diffAcrossFrames[2] >= 1.5
         )
+        if positions.argmin(axis=0)[2] < positions.argmax(axis=0)[2]:
+            fitsCriteria = False
+        # smallest value first, should go to raise wand instead
+        # if positions.argmin(axis=0) < positions.argmax(axis=0):
+        # fitsCriteria = False
 
-        self.wandLowered = (True, time.time())
+        # print("diffacross frames [2] for detect lower wand: ", diffAcrossFrames[2])
 
         # check if wand raised
         return fitsCriteria
@@ -133,6 +142,8 @@ class ActionDetector:
             and diffAcrossFrames[1] < moveThreshold
             and diffAcrossFrames[2] >= moveThreshold
         )
+
+        # print("detecting fast attack")
 
         # check if wand raised
         return fitsCriteria
@@ -159,9 +170,12 @@ class ActionDetector:
     def getAction(self, positionFrames, rotationFrames):
 
         detectors = {
-            "detectRotateSide": {"fn": self.detectRotateSide, "framesToEvaluate": 20},
+            "detectRotateSide": {"fn": self.detectRotateSide, "framesToEvaluate": 40},
             "detectFastAttack": {"fn": self.detectLowerWand, "framesToEvaluate": 40},
-            "detectChargedAttack": {"fn": self.detectHorizontal, "framesToEvaluate": 40},
+            "detectChargedAttack": {
+                "fn": self.detectHorizontal,
+                "framesToEvaluate": 40,
+            },
             "detectRaiseWand": {"fn": self.detectRaiseWand, "framesToEvaluate": 40},
             # "detectFastAttack": {"fn": detectFastAttack, "framesToEvaluate": 40},
             # "detectChargedAttack": {"fn": detectChargedAttack, "framesToEvaluate": 120},
@@ -219,6 +233,7 @@ class ActionDetector:
                 #              return ret
 
                 return detectorName
+        return None
 
 
 def test(filename):
