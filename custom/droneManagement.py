@@ -45,7 +45,7 @@ def loadTrajectories():
 
 class DroneManagement(Node):
     def __init__(self, groupState, player):
-        super().__init__('drone_management' + player)
+        super().__init__('drone_management' + str(player))
         self.crazyflies = groupState.crazyflies[:] # familiar crazyflie is 0, rest are spell
         self.player = player
         self.status = np.zeros(len(self.crazyflies)) # 0 is available, 1 is busy

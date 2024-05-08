@@ -49,7 +49,7 @@ class WandFollower(Node):
     def __init__(
             self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=20, player=1
     ):
-        super().__init__("wand_follower_node" + player)
+        super().__init__("wand_follower_node" + str(player))
         self.player = player
         self.max_speed = max_speed
         self.Hz = update_frequency
