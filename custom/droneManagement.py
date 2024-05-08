@@ -13,8 +13,8 @@ from crazyflie_py.uav_trajectory import Trajectory
 
 
 dronePositions = [
-    [[-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1], [-4, 2, 1]],
-    [[3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1], [4, -1.5, 1]],
+    [[-4, 2, 1], [-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1]],
+    [[4, -1.5, 1], [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1]],
 ]
 
 trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield"]
@@ -288,8 +288,10 @@ class DroneManagement(Node):
             self.quick_attack(time)
         if (
             self.quick_attacking and time >= self.quick_attack_end_time
-        ):  # Reset quick attack
-            self.damage_pub.publish(self.quick_attack_damage)
+        ):  # Reset quick attack 
+            damage_message = Int32()
+            damage_message.data = self.quick_attack_damage
+            self.damage_pub.publish(damage_message)
             self.quick_attacking = False
             self.status[self.quick_attack_drones[0]] = 1
             self.quick_attack_drones = []
@@ -301,7 +303,9 @@ class DroneManagement(Node):
         if (
             self.heavy_attacking and time >= self.heavy_attack_end_time
         ):  # Reset heavy attack
-            self.damage_pub.publish(self.heavy_attack_damage)
+            damage_message = Int32()
+            damage_message.data = self.heavy_attack_damage
+            self.damage_pub.publish(damage_message)
             self.heavy_attacking = False
             for drone in self.heavy_attack_drones:
                 self.status[drone] = 1
