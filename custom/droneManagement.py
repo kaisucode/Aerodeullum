@@ -144,6 +144,7 @@ class DroneManagement(Node):
             print("Attack blocked!")
 
     def shield(self, time):
+        print("trying to cast shield")
         if self.status[0] == 0 or time < self.staggered:
             return False
         self.shield_flag = False
@@ -156,6 +157,7 @@ class DroneManagement(Node):
         return True
 
     def quick_attack(self, time):
+        print("trying to cast quick attack")
         self.quick_attack_flag = False
         # select available drone
         self.quick_attack_drones = np.where(self.status[1:] == 1)[0]
@@ -168,6 +170,7 @@ class DroneManagement(Node):
             self.quick_attack_end_time = time + self.quick_attack_duration
 
     def heavy_attack(self, time):
+        print("trying to cast heavy attack")
         self.heavy_attack_flag = False
         # select available drone
         self.heavy_attack_drones = np.where(self.status[1:] == 1)[0:3]
@@ -181,6 +184,7 @@ class DroneManagement(Node):
 
     # Trigger shield movement behavior
     def cast_shield(self, groupState):
+        print("Casting shield")
         trajId, traj = self.getTrajectory("single_shield")
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
         #executeDuration = traj.duration
@@ -189,12 +193,14 @@ class DroneManagement(Node):
 
     # Trigger quick_attack movement behavior
     def cast_quick_attack(self, groupState, quick_attack_drone):
+        print("Casting quick attack")
         trajId, traj = self.getTrajectory("spiral2")
         groupState.crazyflies[quick_attack_drone].startTrajectory(trajId, 1.0, False)
         return
 
     # Trigger quick_attack movement behavior
     def cast_heavy_attack(self, groupState):
+        print("Casting heavy attack")
         trajId1, traj = self.getTrajectory("helix1")
         trajId2, traj = self.getTrajectory("helix2")
         trajId3, traj = self.getTrajectory("helix3")
@@ -213,6 +219,7 @@ class DroneManagement(Node):
         groupState.timeHelper.sleep(3)
 
     def handle_player(self, time):
+        print("Handling player ", self.player)
         # Handle losing
         if self.hp <= 0:
             print("player " + str(self.player) + " loses")

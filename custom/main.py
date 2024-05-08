@@ -63,11 +63,13 @@ def main():
     while p1 and p2 and time.time() < max_time:
       cur_time = time.time()
       # Handle Player 1
+      print("p1-", end="")
       rclpy.spin_once(p1_wand_node)
       rclpy.spin_once(p1_dm)
       p1 = p1_dm.handle_player(cur_time)
       if multiplayer:
           # Handle Player 2
+          print("p2-", end="")
           rclpy.spin_once(p2_wand_node)
           rclpy.spin_once(p2_dm)
           p2 = p2_dm.handle_player(cur_time)
