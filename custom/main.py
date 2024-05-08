@@ -83,6 +83,24 @@ def main():
         print("end of loop")
         timeHelper.sleepForRate(5)
 
+      ## cur_time = time.time()
+      ## # Handle Player 1
+      ## print("p1-", end="")
+      ## rclpy.spin_once(p1_wand_node)
+      ## rclpy.spin_once(p1_dm)
+      ## p1 = p1_dm.handle_player(cur_time)
+      ## if multiplayer:
+      ##     # Handle Player 2
+      ##     print("p2-", end="")
+      ##     rclpy.spin_once(p2_wand_node)
+      ##     print("after wand 2")
+      ##     rclpy.spin_once(p2_dm)
+      ##     print("after dm 2")
+      ##     p2 = p2_dm.handle_player(cur_time)
+      ##     print("after handle player 2")
+      ## print("end of loop")
+      ## timeHelper.sleepForRate(5)
+      
     print("Game over: " + ("player 1 " if p1 else "player 2 ") + "wins!")
     land(groupState, 0.01, 3)
     timeHelper.sleep(3.0)
