@@ -54,6 +54,20 @@ class DroneManagement(Node):
         self.heavy_attack_flag = False
         self.groupState = groupState
 
+        # load trajectories based on csv files, and upload to the drones
+        # key: numeric id, value: trajectory
+        self.trajectoryFilemapping = loadTrajectories()
+        for cf in self.crazyflies:
+            for fileprefix in self.trajectoryFilemapping:
+                trajectoryId = self.trajectoryFilemapping[fileprefix]["id"]
+                cf.uploadTrajectory(trajectoryId, 0, self.trajectoryFilemapping[fileprefix]["trajectory"])
+
+        #  self.shield_duration = self.trajectoryFilemapping["single_shield"]["trajectory"].duration
+        #  self.quick_attack_duration = self.trajectoryFilemapping["single_shield"]["spiral"].duration
+        #  self.heavy_attack_duration = max([self.trajectoryFilemapping["single_shield"]["helix1"].duration, 
+        #                                    self.trajectoryFilemapping["single_shield"]["helix2"].duration,
+        #                                    self.trajectoryFilemapping["single_shield"]["helix3"].duration])
+
         self.shield_duration = 6        # TODO change this to reflect actual length of shield spell through cooldown
         self.protected_duration = 3 
 
@@ -72,14 +86,6 @@ class DroneManagement(Node):
         self.protection_end_time = 0
         self.quick_attack_end_time = 0
         self.heavy_attack_end_time = 0
-
-        # load trajectories based on csv files, and upload to the drones
-        # key: numeric id, value: trajectory
-        self.trajectoryFilemapping = loadTrajectories()
-        for cf in self.crazyflies:
-            for fileprefix in self.trajectoryFilemapping:
-                trajectoryId = self.trajectoryFilemapping[fileprefix]["id"]
-                cf.uploadTrajectory(trajectoryId, 0, self.trajectoryFilemapping[fileprefix]["trajectory"])
 
         # Create publishers
         # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)

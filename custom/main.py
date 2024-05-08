@@ -62,16 +62,16 @@ def main():
     p1 = True 
     p2 = True
     while p1 and p2:
-      time = time.time()
+      cur_time = time.time()
       # Handle Player 1
       rclpy.spin_once(p1_wand_node)
       rclpy.spin_once(p1_dm)
-      p1 = p1_dm.handle_player(time)
+      p1 = p1_dm.handle_player(cur_time)
       if multiplayer:
           # Handle Player 2
           rclpy.spin_once(p1_wand_node)
           rclpy.spin_once(p1_dm)
-          p2 = p2_dm.handle_player(time)
+          p2 = p2_dm.handle_player(cur_time)
       
     print("Game over: " + ("player 1 " if p1 else "player 2 ") + "wins!")
     land(groupState, 0.01, 3)
