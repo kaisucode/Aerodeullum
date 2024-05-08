@@ -77,6 +77,7 @@ def main():
           p2 = p2_dm.handle_player(cur_time)
           print("after handle player 2")
       print("end of loop")
+      timeHelper.sleepForRate(5)
       
     print("Game over: " + ("player 1 " if p1 else "player 2 ") + "wins!")
     land(groupState, 0.01, 3)
