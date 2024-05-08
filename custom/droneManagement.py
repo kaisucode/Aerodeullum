@@ -40,7 +40,8 @@ class DroneManagement(Node):
             :
         ]  # familiar crazyflie is 0, rest are spell
         self.player = player
-        self.status = np.ones(len(self.crazyflies))  # 0 is available, 1 is busy
+        self.familiar_status = 1
+        self.status = np.ones(3)  # 0 is available, 1 is busy
         self.shield_flag = False
         self.quick_attack_flag = False
         self.heavy_attack_flag = False
@@ -136,21 +137,20 @@ class DroneManagement(Node):
         if msg.data == "detectRotateSide":  # defend
             # If familiar is available, set defense spell flag to be triggered in loop
             print("Player " + str(self.player) + " is trying to cast shield")
-            if self.status[0] == 1:
+            if self.familiar_status == 1 and not self.shielding and not self.staggered:
                 self.defense_flag = True
-                print("Player " + str(self.player) + " casts shield!")
+                print("Player " + str(self.player) + " received shield command")
 
         elif msg.data == "detectFastAttack":  # quick attack
-            print(self.status)
             # If a spell drone is available, set quick attack flag to be triggered in main loop
-            if sum(self.status[1:]) >= 1:
+            if sum(self.status[:]) >= 1 and not self.quick_attacking and not self.heavy_attacking and not self.heavy_attack_flag:
                 self.quick_attack_flag = True
-                print("Player " + str(self.player) + " casts quick attack!")
+                print("Player " + str(self.player) + " received quick attack command")
         elif msg.data == "detectChargedAttack":  # heavy attack
             print(self.status)
-            if sum(self.status[1:]) >= 3:
+            if sum(self.status[:]) >= 3 and not self.quick_attacking and not self.heavy_attacking and not self.quick_attack_flag:
                 self.heavy_attack_flag = True
-                print("Player " + str(self.player) + " casts heavy attack!")
+                print("Player " + str(self.player) + " received heavy attack command")
 
     def damage_callback(self, msg):
         # if not self.shielding:
@@ -168,19 +168,19 @@ class DroneManagement(Node):
             )
             self.staggered = True
             self.stagger_end_time = curr_time + self.stagger_duration
+            self.cast_stagger(self.groupState)
             # TODO change familiar HP light color
-            # TODO stagger
             # TODO check if hp goes below 0, if so end game
         else:
             print("Attack blocked!")
 
     def shield(self, time):
         print("trying to cast shield")
-        if self.status[0] == 0 or time < self.staggered:
+        if self.familiar_status == 0 or self.staggered or time < self.staggered:
+            print("could not cast shield, status: ", self.familiar_status, " staggered: ", self.staggered)
             return False
         self.shield_flag = False
-        self.status[0] = 0
-        # shield() call command to have familiar drone enact shield behavior
+        self.familiar_status = 0
         self.cast_shield(self.groupState)
         self.shielding = True
         self.protection_end_time = time + self.protected_duration
@@ -191,38 +191,35 @@ class DroneManagement(Node):
         print("trying to cast quick attack")
         self.quick_attack_flag = False
         # select available drone
-        self.quick_attack_drones = np.where(self.status[1:] == 1)[0]
-        if len(self.quick_attack_drones < 1):
-            # Error, not enough drones
+        self.quick_attack_drones = np.where(self.status[:] == 1)
+        if len(self.quick_attack_drones) < 1:
             print("Error: not enough drones available")
         else:
             self.cast_quick_attack(
                 self.groupState, self.quick_attack_drones[0]
             )  # TODO pass in specific quick attack drone
-            self.status[self.quick_attack_drones] = (
-                0  # TODO make sure these indices account for the slice
-            )
+            self.quick_attacking = True
+            self.status[self.quick_attack_drones[0]] = 0
             self.quick_attack_end_time = time + self.quick_attack_duration
 
     def heavy_attack(self, time):
         print("trying to cast heavy attack")
         self.heavy_attack_flag = False
         # select available drone
-        self.heavy_attack_drones = np.where(self.status[1:] == 1)[0:3]
+        self.heavy_attack_drones = np.where(self.status[:] == 1)
         if len(self.heavy_attack_drones < 3):
             # Error, not enough drones
             print("Error: not enough drones available")
         else:
             self.cast_heavy_attack(self.groupState)
-            self.status[self.heavy_attack_drones] = (
-                0  # TODO make sure these indices account for the slice
-            )
+            self.heavy_attacking = True
+            for drone in self.heavy_attack_drones:
+                self.status[drone] = 0
             self.heavy_attack_end_time = time + self.heavy_attack_duration
 
     # Trigger shield movement behavior
     def cast_shield(self, groupState):
         print("Casting shield")
-
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "single_shield")
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
@@ -262,7 +259,6 @@ class DroneManagement(Node):
             np.asarray(dronePositions[side][droneIndex]), 0, 5.0
         )
         groupState.timeHelper.sleep(3)
-        self.status = np.ones(len(self.crazyflies))
         self.max_time = time.time() + self.max_game_duration
 
     def handle_player(self, time):
@@ -277,7 +273,7 @@ class DroneManagement(Node):
             self.shield(time)
         if self.shielding and time >= self.shield_end_time:  # Reset shield
             self.shielding = False
-            self.status[0] = 1
+            self.familiar_status = 1
         if self.staggered and time >= self.stagger_end_time:  # Reset stagger
             self.staggered = False
 
@@ -291,7 +287,7 @@ class DroneManagement(Node):
         ):  # Reset quick attack
             self.damage_pub.publish(self.quick_attack_damage)
             self.quick_attacking = False
-            self.status[self.quick_attack_drones] = 1
+            self.status[self.quick_attack_drones[0]] = 1
             self.quick_attack_drones = []
 
         # Handle Heavy Attacks
@@ -300,10 +296,11 @@ class DroneManagement(Node):
             self.heavy_attack(time)
         if (
             self.heavy_attacking and time >= self.heavy_attack_end_time
-        ):  # Reset quick attack
+        ):  # Reset heavy attack
             self.damage_pub.publish(self.heavy_attack_damage)
             self.heavy_attacking = False
-            self.status[self.heavy_attack_drones] = 1
+            for drone in self.heavy_attack_drones:
+                self.status[drone] = 1
             self.heavy_attack_drones = []
 
         # Return true if game isn't over
