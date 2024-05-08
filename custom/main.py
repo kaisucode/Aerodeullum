@@ -77,28 +77,4 @@ def main():
     land(groupState, 0.01, 3)
     timeHelper.sleep(3.0)
 
-    if sim:
-      fig = plt.figure()
-      ax = fig.add_subplot(111, projection='3d')
-      ax.set_xlim([-3, 3])
-      ax.set_ylim([-3, 3])
-      ax.set_zlim([0, 3])
-      ax.set_xlabel("X")
-      ax.set_ylabel("Y")
-      ax.set_zlabel("Z")
-      ax.view_init(20, 20)
-
-      xs = [p[0] for p in wand_node.states]
-      ys = [p[1] for p in wand_node.states]
-      zs = [p[2] for p in wand_node.states]
-
-      ax.plot(xs, ys, zs, label='crazyflie')
-
-      xs = [p[0][0] for p in wand_node.goals]
-      ys = [p[0][1] for p in wand_node.goals]
-      zs = [p[0][2] for p in wand_node.goals]
-
-      ax.plot(xs, ys, zs, label='wand')
-      plt.legend()
-      plt.show()
 main()
