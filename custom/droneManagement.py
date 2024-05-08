@@ -101,7 +101,6 @@ class DroneManagement(Node):
         self.spell_subscriber = self.create_subscription(
             String, "spell" + str(self.player), self.spell_callback, 1
         )
-        print("made subscriber", "spell" + str(self.player))
         self.damage_subscriber = self.create_subscription(
             Int32,
             "damage" + ("2" if self.player == 1 else "1"),
@@ -112,7 +111,6 @@ class DroneManagement(Node):
         self.call_timer = self.create_timer(1 / self.Hz, self.timer_cb)
 
     def timer_cb(self):
-        print("in timer cb", end="")
         curr_time = time.time()
         self.handle_player(curr_time)
         if self.hp <= 0:
@@ -134,24 +132,18 @@ class DroneManagement(Node):
         Spell callback method, called everytime a message is published to the topic /spell
         triggers behavior corresponding to received spell command
         """
-        print("message", msg.data)
         if msg.data == "detectRotateSide":  # defend
             # If familiar is available, set defense spell flag to be triggered in loop
-            print("Player " + str(self.player) + " is trying to cast shield")
             if self.familiar_status == 1 and not self.shielding and not self.staggered:
                 self.defense_flag = True
-                print("Player " + str(self.player) + " received shield command")
 
         elif msg.data == "detectFastAttack":  # quick attack
             # If a spell drone is available, set quick attack flag to be triggered in main loop
             if sum(self.status[:]) >= 1 and not self.quick_attacking and not self.heavy_attacking and not self.heavy_attack_flag:
                 self.quick_attack_flag = True
-                print("Player " + str(self.player) + " received quick attack command")
         elif msg.data == "detectChargedAttack":  # heavy attack
-            print(self.status)
             if sum(self.status[:]) >= 3 and not self.quick_attacking and not self.heavy_attacking and not self.quick_attack_flag:
                 self.heavy_attack_flag = True
-                print("Player " + str(self.player) + " received heavy attack command")
 
     def damage_callback(self, msg):
         # if not self.shielding:
@@ -222,7 +214,7 @@ class DroneManagement(Node):
 
     # Trigger shield movement behavior
     def cast_shield(self, groupState):
-        print("Casting shield")
+        print("Triggering shield motion")
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "single_shield")
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
@@ -232,7 +224,7 @@ class DroneManagement(Node):
 
     # Trigger quick_attack movement behavior
     def cast_quick_attack(self, groupState, quick_attack_drone):
-        print("Casting quick attack")
+        print("Triggering quick attack motion")
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "spiral")
         groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 1.0, False)
@@ -240,7 +232,7 @@ class DroneManagement(Node):
 
     # Trigger quick_attack movement behavior
     def cast_heavy_attack(self, groupState):
-        print("Casting heavy attack")
+        print("Triggering heavy attack motion")
         player_prefix = "p" + str(self.player) + "_"
         trajId1, traj = self.getTrajectory(player_prefix + "helix1")
         trajId2, traj = self.getTrajectory(player_prefix + "helix2")
@@ -251,6 +243,7 @@ class DroneManagement(Node):
         return
 
     def cast_stagger(self, groupState):
+        print("Triggering stagger")
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "familiar")
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
@@ -265,7 +258,6 @@ class DroneManagement(Node):
         self.max_time = time.time() + self.max_game_duration
 
     def handle_player(self, time):
-        print("Handling player ", self.player)
         # Handle losing
         if self.hp <= 0:
             print("player " + str(self.player) + " loses")
@@ -276,9 +268,11 @@ class DroneManagement(Node):
             print("handle player - shield")
             self.shield(time)
         if self.shielding and time >= self.shield_end_time:  # Reset shield
+            print("Shield Finished")
             self.shielding = False
             self.familiar_status = 1
         if self.staggered and time >= self.stagger_end_time:  # Reset stagger
+            print("Stagger Finished")
             self.staggered = False
 
         # Handle Quick Attacks
@@ -289,6 +283,7 @@ class DroneManagement(Node):
         if (
             self.quick_attacking and time >= self.quick_attack_end_time
         ):  # Reset quick attack 
+            print("Quick attack finished")
             damage_message = Int32()
             damage_message.data = self.quick_attack_damage
             self.damage_pub.publish(damage_message)
@@ -303,6 +298,7 @@ class DroneManagement(Node):
         if (
             self.heavy_attacking and time >= self.heavy_attack_end_time
         ):  # Reset heavy attack
+            print("Heavy attack finished")
             damage_message = Int32()
             damage_message.data = self.heavy_attack_damage
             self.damage_pub.publish(damage_message)
