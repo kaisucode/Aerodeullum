@@ -219,6 +219,7 @@ class ActionDetector:
                 #              return ret
 
                 return detectorName
+        return None
 
 
 def test(filename):
