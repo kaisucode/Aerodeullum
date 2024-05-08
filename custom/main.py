@@ -55,7 +55,8 @@ def main():
     # Game loop
     p1 = True 
     p2 = True
-    while p1 and p2:
+    max_time = time.time() + 120
+    while p1 and p2 and time.time() < max_time:
       cur_time = time.time()
       # Handle Player 1
       rclpy.spin_once(p1_wand_node)
