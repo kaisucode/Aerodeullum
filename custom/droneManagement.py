@@ -293,7 +293,7 @@ class DroneManagement(Node):
         self.max_time = time.time() + self.max_game_duration
 
     def handle_player(self, time):
-        print("Handling player ", self.player)
+        # print("Handling player ", self.player)
         # Handle losing
         if self.hp <= 0:
             print("player " + str(self.player) + " loses")
