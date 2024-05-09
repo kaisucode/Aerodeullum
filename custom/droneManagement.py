@@ -49,7 +49,7 @@ class DroneManagement(Node):
         # If color changes should be active
         self.color = False
         # If simple trajectories should be used - for real robots 
-        self.simple = True
+        self.simple = False
 
         # load trajectories based on csv files, and upload to the drones
         # key: numeric id, value: trajectory
@@ -88,7 +88,7 @@ class DroneManagement(Node):
 
         # Gameplay statistics 
         self.hp = 100
-        self.quick_attack_damage = 10
+        self.quick_attack_damage = 30
         self.heavy_attack_damage = 50
 
         # Game Variables
