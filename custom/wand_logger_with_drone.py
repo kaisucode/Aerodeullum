@@ -6,9 +6,9 @@ from crazyflie_py import Crazyswarm
 from std_msgs.msg import String
 
 # from sensor_msgs.msg import Joy
-# from pathlib import Path
-# from crazyflie_py.uav_trajectory import Trajectory
-# from rclpy.executors import MultiThreadedExecutor
+#from pathlib import Path
+#from crazyflie_py.uav_trajectory import Trajectory
+#from rclpy.executors import MultiThreadedExecutor
 
 
 # import rospy
@@ -20,14 +20,12 @@ import math
 
 haveDrones = True
 
-
 def resetDrones(side, allcfs):
     for droneId in dronePositions[side]:
         allcfs.crazyfliesById[droneId].goTo(
             np.asarray(dronePositions[side][droneId]), 0, 5.0
         )
         timeHelper.sleep(3)
-
 
 def euler_from_quaternion(x, y, z, w):
     t0 = +2.0 * (w * x + y * z)
@@ -46,17 +44,10 @@ def euler_from_quaternion(x, y, z, w):
     # return roll_x, pitch_y, yaw_z # in radians
     return math.degrees(roll_x), math.degrees(pitch_y), math.degrees(yaw_z)
 
-
 class WandFollower(Node):
 
     def __init__(
-        self,
-        allcfs,
-        timeHelper,
-        curSide="sideA",
-        max_speed=0.5,
-        update_frequency=10,
-        player=1,
+            self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=20, player=1
     ):
         super().__init__("wand_follower_node" + str(player))
         self.player = player
@@ -77,8 +68,7 @@ class WandFollower(Node):
         self.rotationQueue = []
         self.actionDetector = ActionDetector(shouldFlip=(self.player != 1))
 
-        self.pub = self.create_publisher(String, "spell" + str(self.player), 10)
-        print("spell" + str(self.player))
+        self.pub = self.create_publisher(String, 'spell' + str(self.player), 10)
 
     def timer_cb(self):
         # Get state of wand
@@ -96,8 +86,6 @@ class WandFollower(Node):
         if action != None:
 
             # get action
-            print("pretend dooing action ", action)
-
             msg = String()
             msg.data = action
             self.pub.publish(msg)
@@ -119,11 +107,7 @@ class WandFollower(Node):
         # Loop through all transforms (for all objects/crazyflies)
         for transform in msg.transforms:
             # Find the transform named "wand"
-
-            childFrame = "wand"
-            childFrame = "tf1aero" if self.player == 1 else "tf2aero"
-
-            if transform.child_frame_id == childFrame:
+            if transform.child_frame_id == "wand":
                 # position (x, y, z)
                 position = np.array(
                     [
@@ -180,9 +164,9 @@ if __name__ == "__main__":
             rclpy.init()
 
         except:
-            print("nooooool")
+            print("Error in rclpy init")
 
-    wand_node = WandFollower(allcfs, timeHelper, 1)
+    wand_node = WandFollower(allcfs, timeHelper, "sideA")
 
     # executor = rclpy.Executor()
     # executor = MultiThreadedExecutor(num_threads=2)

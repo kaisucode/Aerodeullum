@@ -258,7 +258,7 @@ def test(filename):
             if fitsCriteria:
                 message = "frame " + str(i) + "~" + str(i + 80) + " " + detectorName
                 # print(message)
-                print(detectorName)
+                # print(detectorName)
 
             continue
             isHorizontal = detectHorizontal(
