@@ -46,7 +46,7 @@ class DroneManagement(Node):
         self.quick_attack_flag = False
         self.heavy_attack_flag = False
         self.groupState = groupState
-        self.max_game_duration = 120
+        self.max_game_duration = 4 * 60
 
         # load trajectories based on csv files, and upload to the drones
         # key: numeric id, value: trajectory
@@ -269,7 +269,14 @@ class DroneManagement(Node):
         # Handle losing
         if self.hp <= 0:
             print("player " + str(self.player) + " loses")
+            print("Game over: " + ("player 1 " if self.player == 2 else "player 2 ") + "wins!")
+            self.destroy_node()
             return False
+        if time >= self.max_time:
+            print("Game over: time exceeded")
+            self.destroy_node()
+            return False
+
 
         # Handle Shielding
         if self.shield_flag == True:  # Cast Shield
