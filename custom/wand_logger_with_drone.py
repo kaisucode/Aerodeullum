@@ -28,7 +28,8 @@ dronePositions = [
 ]
 
 #  trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield", "simple"]
-trajectoryNames = ["spiral", "helix4", "familiar", "single_shield", "simple"]
+#  trajectoryNames = ["spiral", "helix4", "familiar", "single_shield", "simple"]
+trajectoryNames = ["spiral", "helix4", "familiar", "single_shield"]
 
 def loadTrajectories():
     trajectoryFilemapping = {}  # {"name": {"trajectory", "id"}}
@@ -95,16 +96,16 @@ class WandFollower(Node):
 
         self.gestureLock = False
         self.trajectoryFilemapping = loadTrajectories()
-        for cf in self.allcfs.crazyflies:
-            for fileprefix in self.trajectoryFilemapping:
-                trajectoryId = self.trajectoryFilemapping[fileprefix]["id"]
+        #  for cf in self.allcfs.crazyflies:
+        #      for fileprefix in self.trajectoryFilemapping:
+        #          trajectoryId = self.trajectoryFilemapping[fileprefix]["id"]
 
-                cf.uploadTrajectory(
-                    trajectoryId,
-                    0,
-                    self.trajectoryFilemapping[fileprefix]["trajectory"],
-                )
-                timeHelper.sleep(1)
+        #          cf.uploadTrajectory(
+        #              trajectoryId,
+        #              0,
+        #              self.trajectoryFilemapping[fileprefix]["trajectory"],
+        #          )
+        #          timeHelper.sleep(1)
 
 
     def getTrajectory(self, trajName):
@@ -119,6 +120,14 @@ class WandFollower(Node):
             np.asarray(dronePositions[side][droneIndex]), 0, 3.0
         )
         self.groupState.timeHelper.sleep(3)
+
+    def executeTraj(self, droneId, trajName): 
+        trajId, traj = self.getTrajectory("p1" + trajName)
+        self.allcfs.crazyflies[droneId].uploadTrajectory(trajId, 0, traj)
+        timeHelper.sleep(2)
+        self.allcfs.crazyflies[droneId].startTrajectory(trajId, 1.0, False)
+        self.timeHelper.sleep(traj.duration())
+
 
     def timer_cb(self):
         #  if time.time() > self.max_time:
@@ -148,25 +157,23 @@ class WandFollower(Node):
             print("using action: ", action)
 
             if action == "detectRotateSide": 
-                trajId, traj = self.getTrajectory("p1" + "single_shield")
-                droneIdx = 0
-                self.allcfs.crazyflies[0].startTrajectory(trajId, 1.0, False)
+                #  trajId, traj = self.getTrajectory("p1" + "single_shield")
+                executeTraj(0, "single_shield")
             elif action == "detectFastAttack": 
-                trajId, traj = self.getTrajectory("p1" + "spiral")
                 attackDrone = self.curAttack % 3 + 1
                 self.curAttack += 1
                 if self.oneDrone: 
                     attackDrone = 0
-                self.allcfs.crazyflies[attackDrone].startTrajectory(trajId, 2.0, False)
+                executeTraj(attackDrone, "spiral")
 
-            elif action == "detectChargedAttack": 
-                trajId, traj = self.getTrajectory("p1" + "helix4")
-                if self.oneDrone: 
-                    attackDrone = 0
-                    self.allcfs.crazyflies[attackDrone].startTrajectory(trajId, 1.0, False)
-                else: 
-                    for i in range(1, 4): 
-                        self.allcfs.crazyflies[i].startTrajectory(trajId, 1.0, False)
+            #  elif action == "detectChargedAttack": 
+            #      trajId, traj = self.getTrajectory("p1" + "helix4")
+            #      if self.oneDrone: 
+            #          attackDrone = 0
+            #          self.allcfs.crazyflies[attackDrone].startTrajectory(trajId, 1.0, False)
+            #      else: 
+            #          for i in range(1, 4): 
+            #              self.allcfs.crazyflies[i].startTrajectory(trajId, 1.0, False)
             timeHelper.sleep(2)
             gestureLock = False
 
