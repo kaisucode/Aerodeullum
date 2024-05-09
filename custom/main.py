@@ -36,10 +36,6 @@ def main():
 
         groupState = SimpleNamespace(crazyflies=crazyflies, timeHelper=timeHelper)
 
-    print("Taking off") 
-    takeoff(groupState, 1.0, 3)
-    timeHelper.sleep(3.0)
-
     max_time = time.time() + 240
     _exec = rclpy.executors.MultiThreadedExecutor()
     print("Setting up game, multiplayer is ", ("on" if multiplayer else "off"))
@@ -53,8 +49,15 @@ def main():
         p2_crazyflies = SimpleNamespace(
             crazyflies=crazyflies[4:8], timeHelper=timeHelper
         )
-        p2_wand_node = WandFollower(p2_crazyflies, timeHelper, max_time=max_time, player=2)
+        p2_wand_node = WandFollower(
+            p2_crazyflies, timeHelper, max_time=max_time, player=2
+        )
         p2_dm = DroneManagement(p2_crazyflies, player=2)
+
+    timeHelper.sleep(5.0)
+    print("Taking off")
+    takeoff(groupState, 1.0, 3)
+    timeHelper.sleep(3.0)
 
     print("Going to start positions")
     for idx in range(4):

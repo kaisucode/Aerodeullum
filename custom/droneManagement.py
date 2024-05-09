@@ -15,18 +15,37 @@ dronePositions = [
     [[4, -1.5, 1], [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1]],
 ]
 
-trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield", "simple"]
+trajectoryNames = [
+    "spiral",
+    "helix1",
+    "helix2",
+    "helix3",
+    "familiar",
+    "single_shield",
+    "simple",
+]
+
+complexTrajs = [
+    "spiral",
+    "helix1",
+    "helix2",
+    "helix3",
+]
+
 
 def loadTrajectories():
     trajectoryFilemapping = {}  # {"name": {"trajectory", "id"}}
     trajId = 0
     for fileprefix in trajectoryNames:
-        
-        for player in ["p1_", "p2_"]: 
+
+        for player in ["p1_", "p2_"]:
             trajName = player + fileprefix
             trajectoryFilemapping[trajName] = {"id": trajId, "trajectory": Trajectory()}
             filename = "aero/" + trajName + ".csv"
-            trajectoryFilemapping[trajName]["trajectory"].loadcsv(Path(__file__).parent / filename)
+            # if fileprefix not in complexTrajs:
+            trajectoryFilemapping[trajName]["trajectory"].loadcsv(
+                Path(__file__).parent / filename
+            )
             trajId += 1
     return trajectoryFilemapping
 
@@ -48,8 +67,8 @@ class DroneManagement(Node):
         #  self.max_game_duration = 4 * 60 # set in main instead
         # If color changes should be active
         self.color = False
-        # If simple trajectories should be used - for real robots 
-        self.simple = True
+        # If simple trajectories should be used - for real robots
+        self.simple = False
 
         # load trajectories based on csv files, and upload to the drones
         # key: numeric id, value: trajectory
@@ -62,6 +81,7 @@ class DroneManagement(Node):
                     0,
                     self.trajectoryFilemapping[fileprefix]["trajectory"],
                 )
+                groupState.timeHelper.sleep(0.2)
 
         # Set default behavior durations TODO Remove if trajectory timing works
         self.shield_duration = 6
@@ -70,23 +90,34 @@ class DroneManagement(Node):
         self.quick_attack_duration = 5
         self.heavy_attack_duration = 10
         # Durations of attack parts of spells without return time
-        self.quick_damage_duration = 7#.1
-        self.heavy_damage_duration = 12#.4
-
+        self.quick_damage_duration = 7  # .1
+        self.heavy_damage_duration = 12  # .4
 
         # Compute actual trajectory durations
-        self.shield_duration = self.trajectoryFilemapping["p1_single_shield"]["trajectory"].duration
-        self.quick_attack_duration = self.trajectoryFilemapping["p1_spiral"]["trajectory"].duration
-        self.heavy_attack_duration = max([self.trajectoryFilemapping["p1_helix1"]["trajectory"].duration, 
-                                           self.trajectoryFilemapping["p1_helix2"]["trajectory"].duration,
-                                           self.trajectoryFilemapping["p1_helix3"]["trajectory"].duration])
-        self.stagger_duration = self.trajectoryFilemapping["p1_familiar"]["trajectory"].duration
-        self.simple_quick_attack_duration = 12# 10 * self.trajectoryFilemapping["p1_simple"]["trajectory"].duration
+        self.shield_duration = self.trajectoryFilemapping["p1_single_shield"][
+            "trajectory"
+        ].duration
+        # self.quick_attack_duration = self.trajectoryFilemapping["p1_spiral"][
+        #     "trajectory"
+        # ].duration
+        # self.heavy_attack_duration = max(
+        #     [
+        #         self.trajectoryFilemapping["p1_helix1"]["trajectory"].duration,
+        #         self.trajectoryFilemapping["p1_helix2"]["trajectory"].duration,
+        #         self.trajectoryFilemapping["p1_helix3"]["trajectory"].duration,
+        #     ]
+        # )
+        self.stagger_duration = self.trajectoryFilemapping["p1_familiar"][
+            "trajectory"
+        ].duration
+        self.simple_quick_attack_duration = (
+            12  # 10 * self.trajectoryFilemapping["p1_simple"]["trajectory"].duration
+        )
         self.simple_quick_damage_duration = 5
         self.simple_heavy_attack_duration = 22
         self.simple_heavy_damage_duration = 10
 
-        # Gameplay statistics 
+        # Gameplay statistics
         self.hp = 100
         self.quick_attack_damage = 30
         self.heavy_attack_damage = 50
@@ -127,7 +158,11 @@ class DroneManagement(Node):
         curr_time = time.time()
         self.handle_player(curr_time)
         if self.hp <= 0:
-            print("Game over: " + ("player 1 " if self.player == 2 else "player 2 ") + "wins!")
+            print(
+                "Game over: "
+                + ("player 1 " if self.player == 2 else "player 2 ")
+                + "wins!"
+            )
             land(self.groupState, 0.01, 3)
             self.timeHelper.sleep(3.0)
             self.destroy_node()
@@ -136,7 +171,6 @@ class DroneManagement(Node):
             land(self.groupState, 0.01, 3)
             self.timeHelper.sleep(3.0)
             self.destroy_node()
-
 
     def getTrajectory(self, trajName):
         return (
@@ -157,10 +191,20 @@ class DroneManagement(Node):
                 self.shield_flag = True
         elif msg.data == "detectFastAttack":  # quick attack
             # If a spell drone is available, set quick attack flag to be triggered in main loop
-            if sum(self.status[:]) >= 1 and not self.quick_attacking and not self.heavy_attacking and not self.heavy_attack_flag:
+            if (
+                sum(self.status[:]) >= 1
+                and not self.quick_attacking
+                and not self.heavy_attacking
+                and not self.heavy_attack_flag
+            ):
                 self.quick_attack_flag = True
         elif msg.data == "detectChargedAttack":  # heavy attack
-            if sum(self.status[:]) >= 3 and not self.quick_attacking and not self.heavy_attacking and not self.quick_attack_flag:
+            if (
+                sum(self.status[:]) >= 3
+                and not self.quick_attacking
+                and not self.heavy_attacking
+                and not self.quick_attack_flag
+            ):
                 self.heavy_attack_flag = True
 
     def damage_callback(self, msg):
@@ -188,7 +232,12 @@ class DroneManagement(Node):
     def shield(self, time):
         print("trying to cast shield")
         if self.familiar_status == 0 or self.staggered or time < self.staggered:
-            print("could not cast shield, status: ", self.familiar_status, " staggered: ", self.staggered)
+            print(
+                "could not cast shield, status: ",
+                self.familiar_status,
+                " staggered: ",
+                self.staggered,
+            )
             return False
         self.shield_flag = False
         self.familiar_status = 0
@@ -204,7 +253,14 @@ class DroneManagement(Node):
         # select available drone
         self.quick_attack_drones = np.where(self.status == 1)[0]
         if len(self.quick_attack_drones) < 1 or self.heavy_attacking:
-            print("Error: not enough drones available", self.status, ", ", self.heavy_attacking, "len: ", len(self.quick_attack_drones))
+            print(
+                "Error: not enough drones available",
+                self.status,
+                ", ",
+                self.heavy_attacking,
+                "len: ",
+                len(self.quick_attack_drones),
+            )
         else:
             self.cast_quick_attack(
                 self.groupState, self.quick_attack_drones[0]
@@ -213,7 +269,9 @@ class DroneManagement(Node):
             self.status[self.quick_attack_drones[0]] = 0
             if self.simple:
                 self.quick_attack_end_time = time + self.simple_quick_attack_duration
-                self.quick_damage_inflict_time = time + self.simple_quick_damage_duration
+                self.quick_damage_inflict_time = (
+                    time + self.simple_quick_damage_duration
+                )
             else:
                 self.quick_attack_end_time = time + self.quick_attack_duration
                 self.quick_damage_inflict_time = time + self.quick_damage_duration
@@ -225,7 +283,14 @@ class DroneManagement(Node):
         self.heavy_attack_drones = np.where(self.status == 1)[0]
         if len(self.heavy_attack_drones) < 3 or self.quick_attacking:
             # Error, not enough drones
-            print("Error: not enough drones available", self.status, ", ", self.quick_attacking, "len: ", len(self.heavy_attack_drones))
+            print(
+                "Error: not enough drones available",
+                self.status,
+                ", ",
+                self.quick_attacking,
+                "len: ",
+                len(self.heavy_attack_drones),
+            )
         else:
             self.cast_heavy_attack(self.groupState)
             self.heavy_attacking = True
@@ -233,7 +298,9 @@ class DroneManagement(Node):
                 self.status[drone] = 0
             if self.simple:
                 self.heavy_attack_end_time = time + self.simple_heavy_attack_duration
-                self.heavy_damage_inflict_time = time + self.simple_heavy_damage_duration
+                self.heavy_damage_inflict_time = (
+                    time + self.simple_heavy_damage_duration
+                )
             else:
                 self.heavy_attack_end_time = time + self.heavy_attack_duration
                 self.heavy_damage_inflict_time = time + self.heavy_damage_duration
@@ -245,7 +312,7 @@ class DroneManagement(Node):
         trajId, traj = self.getTrajectory(player_prefix + "single_shield")
         if self.color:
             # setLEDColorFromHex(groupState.crazyflies[0], "#00ffff") #cyan
-            hex = "#00ffff" #cyan
+            hex = "#00ffff"  # cyan
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[0].setLEDColor(*rgb)
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
@@ -258,18 +325,24 @@ class DroneManagement(Node):
         print("Triggering quick attack motion")
         player_prefix = "p" + str(self.player) + "_"
         if self.simple:
-            trajId, traj = self.getTrajectory(player_prefix + "simple") #for simple attack
+            trajId, traj = self.getTrajectory(
+                player_prefix + "simple"
+            )  # for simple attack
         else:
             trajId, traj = self.getTrajectory(player_prefix + "spiral")
         if self.color:
             # setLEDColorFromHex(groupState.crazyflies[quick_attack_drone + 1], "#7f00ff") #violet
-            hex = "#7f00ff" #violet
+            hex = "#7f00ff"  # violet
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[quick_attack_drone + 1].setLEDColor(*rgb)
         if self.simple:
-            groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 1.0, False) #for simple attack
+            groupState.crazyflies[quick_attack_drone + 1].startTrajectory(
+                trajId, 1.0, False
+            )  # for simple attack
         else:
-            groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 1.0, False)
+            groupState.crazyflies[quick_attack_drone + 1].startTrajectory(
+                trajId, 1.0, False
+            )
         return
 
     # Trigger quick_attack movement behavior
@@ -279,33 +352,41 @@ class DroneManagement(Node):
         print("Triggering heavy attack motion")
         player_prefix = "p" + str(self.player) + "_"
         if self.simple:
-            trajId, traj = self.getTrajectory(player_prefix + "simple") #for simple attack
+            trajId, traj = self.getTrajectory(
+                player_prefix + "simple"
+            )  # for simple attack
         else:
             trajId1, traj = self.getTrajectory(player_prefix + "helix1")
             trajId2, traj = self.getTrajectory(player_prefix + "helix2")
             trajId3, traj = self.getTrajectory(player_prefix + "helix3")
         if self.color:
-            #setLEDColorFromHex(groupState.crazyflies[1], "#ed2938") #red
-            #setLEDColorFromHex(groupState.crazyflies[2], "#ff8c01") #orange
-            #setLEDColorFromHex(groupState.crazyflies[3], "#ffe733") #yellow
-            hex = "#ed2938" #red
+            # setLEDColorFromHex(groupState.crazyflies[1], "#ed2938") #red
+            # setLEDColorFromHex(groupState.crazyflies[2], "#ff8c01") #orange
+            # setLEDColorFromHex(groupState.crazyflies[3], "#ffe733") #yellow
+            hex = "#ed2938"  # red
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[1].setLEDColor(*rgb)
-            hex = "#ff8c01" #orange
+            hex = "#ff8c01"  # orange
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[2].setLEDColor(*rgb)
-            hex = "#ffe733" #yellow
+            hex = "#ffe733"  # yellow
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[3].setLEDColor(*rgb)
         if self.simple:
-            groupState.crazyflies[1].startTrajectory(trajId, 1.5, False) #for simple attack
-            groupState.crazyflies[2].startTrajectory(trajId, 1.5, False) #for simple attack
-            groupState.crazyflies[3].startTrajectory(trajId, 1.5, False) #for simple attack
+            groupState.crazyflies[1].startTrajectory(
+                trajId, 1.5, False
+            )  # for simple attack
+            groupState.crazyflies[2].startTrajectory(
+                trajId, 1.5, False
+            )  # for simple attack
+            groupState.crazyflies[3].startTrajectory(
+                trajId, 1.5, False
+            )  # for simple attack
         else:
             groupState.crazyflies[1].startTrajectory(trajId1, 1.0, False)
             groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
             groupState.crazyflies[3].startTrajectory(trajId3, 1.0, False)
-        
+
         return
 
     def cast_stagger(self, groupState):
@@ -314,7 +395,7 @@ class DroneManagement(Node):
         trajId, traj = self.getTrajectory(player_prefix + "familiar")
         if self.color:
             # setLEDColorFromHex(groupState.crazyflies[0], "#ed2938") #red
-            hex = "#ed2938" #red
+            hex = "#ed2938"  # red
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[0].setLEDColor(*rgb)
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
@@ -326,13 +407,17 @@ class DroneManagement(Node):
             np.asarray(dronePositions[side][droneIndex]), 0, 3.0
         )
         groupState.timeHelper.sleep(3)
-        self.max_time = max_time 
+        self.max_time = max_time
 
     def handle_player(self, time):
         # Handle losing
         if self.hp <= 0:
             print("player " + str(self.player) + " loses")
-            print("Game over: " + ("player 1 " if self.player == 2 else "player 2 ") + "wins!")
+            print(
+                "Game over: "
+                + ("player 1 " if self.player == 2 else "player 2 ")
+                + "wins!"
+            )
             land(self.groupState, 0.01, 3)
             self.timeHelper.sleep(3.0)
             self.destroy_node()
@@ -343,7 +428,6 @@ class DroneManagement(Node):
             self.timeHelper.sleep(3.0)
             self.destroy_node()
             return False
-
 
         # Handle Shielding
         if self.shield_flag == True:  # Cast Shield
@@ -366,7 +450,7 @@ class DroneManagement(Node):
         if self.quick_attack_flag and not self.heavy_attacking:  # Cast Quick Attack
             # start quick attack  movement and set timer for shield to sleep
             self.quick_attack(time)
-        if (self.quick_attacking and time >= self.quick_damage_inflict_time):
+        if self.quick_attacking and time >= self.quick_damage_inflict_time:
             print("Quick attacked!")
             damage_message = Int32()
             damage_message.data = self.quick_attack_damage
@@ -375,9 +459,9 @@ class DroneManagement(Node):
             if self.color:
                 # setLEDColor(self.groupState.crazyflies[self.quick_attack_drones[0] + 1], 0, 0, 0)
                 self.crazyflies[self.quick_attack_Drones[0] + 1].setLEDColor(0, 0, 0)
-        if (self.quick_attacking and time >= self.quick_attack_end_time):  
+        if self.quick_attacking and time >= self.quick_attack_end_time:
             print("Quick attack drones returned!")
-            # Reset quick attack 
+            # Reset quick attack
             self.quick_attacking = False
             self.status[self.quick_attack_drones[0]] = 1
             self.quick_attack_drones = []
@@ -386,7 +470,7 @@ class DroneManagement(Node):
         if self.heavy_attack_flag and not self.quick_attacking:  # Cast Quick Attack
             # start quick attack  movement and set timer for shield to sleep
             self.heavy_attack(time)
-        if (self.heavy_attacking and time >= self.heavy_damage_inflict_time):
+        if self.heavy_attacking and time >= self.heavy_damage_inflict_time:
             print("Heavy attack finished")
             damage_message = Int32()
             damage_message.data = self.heavy_attack_damage
@@ -399,7 +483,9 @@ class DroneManagement(Node):
                 # setLEDColor(self.groupState.crazyflies[1], 0, 0, 0)
                 # setLEDColor(self.groupState.crazyflies[2], 0, 0, 0)
                 # setLEDColor(self.groupState.crazyflies[3], 0, 0, 0)
-        if (self.heavy_attacking and time >= self.heavy_attack_end_time):  # Reset heavy attack
+        if (
+            self.heavy_attacking and time >= self.heavy_attack_end_time
+        ):  # Reset heavy attack
             print("Heavy attack drones returned!")
             self.heavy_attacking = False
             for drone in self.heavy_attack_drones:
