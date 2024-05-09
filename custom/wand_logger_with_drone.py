@@ -47,7 +47,7 @@ def euler_from_quaternion(x, y, z, w):
 class WandFollower(Node):
 
     def __init__(
-            self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=20, player=1
+            self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=10, player=1
     ):
         super().__init__("wand_follower_node" + str(player))
         self.player = player
@@ -107,7 +107,11 @@ class WandFollower(Node):
         # Loop through all transforms (for all objects/crazyflies)
         for transform in msg.transforms:
             # Find the transform named "wand"
-            if transform.child_frame_id == "wand":
+            childFrame = "wand"
+            childFrame = "tf1aero" if self.player == 1 else "tf2aero"
+
+            if transform.child_frame_id == childFrame:
+            # if transform.child_frame_id == "wand":
                 # position (x, y, z)
                 position = np.array(
                     [
@@ -166,7 +170,8 @@ if __name__ == "__main__":
         except:
             print("Error in rclpy init")
 
-    wand_node = WandFollower(allcfs, timeHelper, "sideA")
+    # wand_node = WandFollower(allcfs, timeHelper, "sideA")
+    wand_node = WandFollower(allcfs, timeHelper, 1)
 
     # executor = rclpy.Executor()
     # executor = MultiThreadedExecutor(num_threads=2)
