@@ -4,14 +4,14 @@ def generate_time_position_pairs(t, rot):
     #generate time-position pairs for helix trajectory
     #parametric helix equation
     #spiral_function = k/t_curr #some decreasing function of t that does not reach 0 (avoid crash)
-    r = 0.5 #change to spiral constant
+    r = 0.25 #change to spiral constant
     time_interval = 0.1
     time_position_pairs = []
     t_curr = 0
     for i in range (int(t//time_interval)):
         y = r * np.cos(t_curr + rot)
         z = r * np.sin(t_curr + rot)
-        x = t_curr/3
+        x = t_curr/2
         time_position_pairs.append([t_curr, x, y, z])
         t_curr += time_interval
     time_position_return_pairs = generate_time_position_pairs_return(time_position_pairs, t_curr)
@@ -68,7 +68,7 @@ def write_pairs_to_csv(t):
             f.write("%f, %f, %f, %f\n" % (pair[0], pair[1], pair[2], pair[3]))
 
 def main():
-    t = 4 * np.pi
+    t = 8 * np.pi
     write_pairs_to_csv(t)
     
 if __name__ == "__main__":
