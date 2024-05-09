@@ -113,8 +113,8 @@ class WandFollower(Node):
         for transform in msg.transforms:
             # Find the transform named "wand"
             childFrame = "wand"
-            childFrame = "tf1aero" if self.player == 1 else "tf2aero"
-            childFrame = "tf1aero"
+            childFrame = "tfaeropurple" if self.player == 1 else "tfaerobrown"
+            #  childFrame = "tf1aero"
 
             if transform.child_frame_id == childFrame:
             # if transform.child_frame_id == "wand":
