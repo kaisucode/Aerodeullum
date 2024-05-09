@@ -17,7 +17,7 @@ dronePositions = [
     [[4, -1.5, 1], [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1]],
 ]
 
-trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield"]
+trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield", "straight"]
 
 def loadTrajectories():
     trajectoryFilemapping = {}  # {"name": {"trajectory", "id"}}
