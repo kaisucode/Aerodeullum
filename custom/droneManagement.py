@@ -49,7 +49,7 @@ class DroneManagement(Node):
         # If color changes should be active
         self.color = False
         # If simple trajectories should be used - for real robots 
-        self.simple = False
+        self.simple = True
 
         # load trajectories based on csv files, and upload to the drones
         # key: numeric id, value: trajectory
@@ -150,9 +150,10 @@ class DroneManagement(Node):
         triggers behavior corresponding to received spell command
         """
         if msg.data == "detectRotateSide":  # defend
+            print("shield command received")
             # If familiar is available, set defense spell flag to be triggered in loop
             if self.familiar_status == 1 and not self.shielding and not self.staggered:
-                print("shield command received")
+                print("shield command received and triggered")
                 self.shield_flag = True
         elif msg.data == "detectFastAttack":  # quick attack
             # If a spell drone is available, set quick attack flag to be triggered in main loop
