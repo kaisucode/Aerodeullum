@@ -81,7 +81,10 @@ class DroneManagement(Node):
                                            self.trajectoryFilemapping["p1_helix2"]["trajectory"].duration,
                                            self.trajectoryFilemapping["p1_helix3"]["trajectory"].duration])
         self.stagger_duration = self.trajectoryFilemapping["p1_familiar"]["trajectory"].duration
-        self.simple_attack_duration = 10 * self.trajectoryFilemapping["p1_straight"]["trajectory"].duration
+        self.simple_quick_attack_duration = 12# 10 * self.trajectoryFilemapping["p1_straight"]["trajectory"].duration
+        self.simple_quick_damage_duration = 5
+        self.simple_heavy_attack_duration = 22
+        self.simple_heavy_damage_duration = 10
 
         # Gameplay statistics 
         self.hp = 100
@@ -204,8 +207,8 @@ class DroneManagement(Node):
             self.quick_attacking = True
             self.status[self.quick_attack_drones[0]] = 0
             if self.simple:
-                self.quick_attack_end_time = time + self.simple_attack_duration
-                self.quick_damage_inflict_time = time + (self.simple_attack_duration/2)
+                self.quick_attack_end_time = time + self.simple_quick_attack_duration
+                self.quick_damage_inflict_time = time + self.simple_quick_damage_duration
             else:
                 self.quick_attack_end_time = time + self.quick_attack_duration
                 self.quick_damage_inflict_time = time + self.quick_damage_duration
@@ -224,8 +227,8 @@ class DroneManagement(Node):
             for drone in self.heavy_attack_drones:
                 self.status[drone] = 0
             if self.simple:
-                self.heavy_attack_end_time = time + self.simple_attack_duration
-                self.heavy_damage_inflict_time = time + (self.simple_attack_duration/2)
+                self.heavy_attack_end_time = time + self.simple_heavy_attack_duration
+                self.heavy_damage_inflict_time = time + self.simple_heavy_damage_duration
             else:
                 self.heavy_attack_end_time = time + self.heavy_attack_duration
                 self.heavy_damage_inflict_time = time + self.heavy_damage_duration
