@@ -323,7 +323,7 @@ class DroneManagement(Node):
     def initialize_drone_position(self, groupState, droneIndex, player, max_time):
         side = player - 1
         groupState.crazyflies[droneIndex].goTo(
-            np.asarray(dronePositions[side][droneIndex]), 0, 1.0
+            np.asarray(dronePositions[side][droneIndex]), 0, 3.0
         )
         groupState.timeHelper.sleep(3)
         self.max_time = max_time 
