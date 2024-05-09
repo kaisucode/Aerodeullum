@@ -235,8 +235,8 @@ class DroneManagement(Node):
         print("Triggering heavy attack motion")
         player_prefix = "p" + str(self.player) + "_"
         trajId1, traj = self.getTrajectory(player_prefix + "helix1")
-        trajId2, traj = self.getTrajectory(player_prefix + "helix3")
-        trajId3, traj = self.getTrajectory(player_prefix + "helix2")
+        trajId2, traj = self.getTrajectory(player_prefix + "helix2")
+        trajId3, traj = self.getTrajectory(player_prefix + "helix3")
         groupState.crazyflies[1].startTrajectory(trajId1, 1.0, False)
         groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
         groupState.crazyflies[3].startTrajectory(trajId3, 1.0, False)
@@ -252,7 +252,7 @@ class DroneManagement(Node):
     def initialize_drone_position(self, groupState, droneIndex, player):
         side = player - 1
         groupState.crazyflies[droneIndex].goTo(
-            np.asarray(dronePositions[side][droneIndex]), 0, 3.0
+            np.asarray(dronePositions[side][droneIndex]), 0, 1.0
         )
         groupState.timeHelper.sleep(3)
         self.max_time = time.time() + self.max_game_duration
