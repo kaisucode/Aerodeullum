@@ -15,7 +15,7 @@ dronePositions = [
     [[4, -1.5, 1], [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1]],
 ]
 
-trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield", "straight"]
+trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield", "simple"]
 
 def loadTrajectories():
     trajectoryFilemapping = {}  # {"name": {"trajectory", "id"}}
@@ -81,7 +81,7 @@ class DroneManagement(Node):
                                            self.trajectoryFilemapping["p1_helix2"]["trajectory"].duration,
                                            self.trajectoryFilemapping["p1_helix3"]["trajectory"].duration])
         self.stagger_duration = self.trajectoryFilemapping["p1_familiar"]["trajectory"].duration
-        self.simple_quick_attack_duration = 12# 10 * self.trajectoryFilemapping["p1_straight"]["trajectory"].duration
+        self.simple_quick_attack_duration = 12# 10 * self.trajectoryFilemapping["p1_simple"]["trajectory"].duration
         self.simple_quick_damage_duration = 5
         self.simple_heavy_attack_duration = 22
         self.simple_heavy_damage_duration = 10
@@ -253,7 +253,7 @@ class DroneManagement(Node):
         print("Triggering quick attack motion")
         player_prefix = "p" + str(self.player) + "_"
         if self.simple:
-            trajId, traj = self.getTrajectory(player_prefix + "straight") #for simple attack
+            trajId, traj = self.getTrajectory(player_prefix + "simple") #for simple attack
         else:
             trajId, traj = self.getTrajectory(player_prefix + "spiral")
         if self.color:
@@ -272,7 +272,7 @@ class DroneManagement(Node):
         print("Triggering heavy attack motion")
         player_prefix = "p" + str(self.player) + "_"
         if self.simple:
-            trajId, traj = self.getTrajectory(player_prefix + "straight") #for simple attack
+            trajId, traj = self.getTrajectory(player_prefix + "simple") #for simple attack
         else:
             trajId1, traj = self.getTrajectory(player_prefix + "helix1")
             trajId2, traj = self.getTrajectory(player_prefix + "helix2")
