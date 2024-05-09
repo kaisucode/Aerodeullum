@@ -53,7 +53,7 @@ def main():
         p2_crazyflies = SimpleNamespace(
             crazyflies=crazyflies[4:8], timeHelper=timeHelper
         )
-        p2_wand_node = WandFollower(p2_crazyflies, timeHelper, player=2)
+        p2_wand_node = WandFollower(p2_crazyflies, timeHelper, max_time=max_time, player=2)
         p2_dm = DroneManagement(p2_crazyflies, player=2)
 
     print("Going to start positions")
