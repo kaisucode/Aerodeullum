@@ -227,7 +227,10 @@ class DroneManagement(Node):
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "single_shield")
         if self.color:
-            setLEDColorFromHex(groupState.crazyflies[0], "#00ffff") #cyan
+            # setLEDColorFromHex(groupState.crazyflies[0], "#00ffff") #cyan
+            hex = "#00ffff" #cyan
+            rgb = ImageColor.getcolor(hex, "RGB")
+            self.crazyflies[0].setLEDColor(*rgb)
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
         # executeDuration = traj.duration
         # sleep for the above duration
@@ -239,7 +242,10 @@ class DroneManagement(Node):
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "spiral")
         if self.color:
-            setLEDColorFromHex(groupState.crazyflies[quick_attack_drone + 1], "#7f00ff") #violet
+            # setLEDColorFromHex(groupState.crazyflies[quick_attack_drone + 1], "#7f00ff") #violet
+            hex = "#7f00ff" #violet
+            rgb = ImageColor.getcolor(hex, "RGB")
+            self.crazyflies[quick_attack_drone + 1].setLEDColor(*rgb)
         groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 1.0, False)
         return
 
@@ -251,9 +257,18 @@ class DroneManagement(Node):
         trajId2, traj = self.getTrajectory(player_prefix + "helix2")
         trajId3, traj = self.getTrajectory(player_prefix + "helix3")
         if self.color:
-            setLEDColorFromHex(groupState.crazyflies[1], "#ed2938") #red
-            setLEDColorFromHex(groupState.crazyflies[2], "#ff8c01") #orange
-            setLEDColorFromHex(groupState.crazyflies[3], "#ffe733") #yellow
+            #setLEDColorFromHex(groupState.crazyflies[1], "#ed2938") #red
+            #setLEDColorFromHex(groupState.crazyflies[2], "#ff8c01") #orange
+            #setLEDColorFromHex(groupState.crazyflies[3], "#ffe733") #yellow
+            hex = "#ed2938" #red
+            rgb = ImageColor.getcolor(hex, "RGB")
+            self.crazyflies[1].setLEDColor(*rgb)
+            hex = "#ff8c01" #orange
+            rgb = ImageColor.getcolor(hex, "RGB")
+            self.crazyflies[2].setLEDColor(*rgb)
+            hex = "#ffe733" #yellow
+            rgb = ImageColor.getcolor(hex, "RGB")
+            self.crazyflies[3].setLEDColor(*rgb)
         groupState.crazyflies[1].startTrajectory(trajId1, 1.0, False)
         groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
         groupState.crazyflies[3].startTrajectory(trajId3, 1.0, False)
@@ -264,7 +279,10 @@ class DroneManagement(Node):
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "familiar")
         if self.color:
-            setLEDColorFromHex(groupState.crazyflies[0], "#ed2938") #red
+            # setLEDColorFromHex(groupState.crazyflies[0], "#ed2938") #red
+            hex = "#ed2938" #red
+            rgb = ImageColor.getcolor(hex, "RGB")
+            self.crazyflies[0].setLEDColor(*rgb)
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
         return
 
@@ -298,7 +316,8 @@ class DroneManagement(Node):
             self.shielding = False
             self.familiar_status = 1
             if self.color:
-                setLEDColor(self.groupState.crazyflies[0], 0, 0, 0)
+                self.crazyflies[0].setLEDColor(0, 0, 0)
+                # setLEDColor(self.groupState.crazyflies[0], 0, 0, 0)
         if self.staggered and time >= self.stagger_end_time:  # Reset stagger
             print("Stagger Finished")
             self.stagger_end_time = 0
@@ -306,7 +325,7 @@ class DroneManagement(Node):
 
         # Handle Quick Attacks
         # TODO maybe update this to allow for multiple quick attacks in series while the previous one is cooling down
-        if self.quick_attack_flag == True:  # Cast Quick Attack
+        if self.quick_attack_flag and not self.heavy_attacking:  # Cast Quick Attack
             # start quick attack  movement and set timer for shield to sleep
             self.quick_attack(time)
         if (self.quick_attacking and time >= self.quick_damage_inflict_time):
@@ -316,7 +335,8 @@ class DroneManagement(Node):
             self.damage_pub.publish(damage_message)
             self.quick_damage_inflict_time = self.max_time + 10000
             if self.color:
-                setLEDColor(self.groupState.crazyflies[self.quick_attack_drones[0] + 1], 0, 0, 0)
+                # setLEDColor(self.groupState.crazyflies[self.quick_attack_drones[0] + 1], 0, 0, 0)
+                self.crazyflies[self.quick_attack_Drones[0] + 1].setLEDColor(0, 0, 0)
         if (self.quick_attacking and time >= self.quick_attack_end_time):  
             print("Quick attack drones returned!")
             # Reset quick attack 
@@ -325,7 +345,7 @@ class DroneManagement(Node):
             self.quick_attack_drones = []
 
         # Handle Heavy Attacks
-        if self.heavy_attack_flag == True:  # Cast Quick Attack
+        if self.heavy_attack_flag and not self.quick_attacking:  # Cast Quick Attack
             # start quick attack  movement and set timer for shield to sleep
             self.heavy_attack(time)
         if (self.heavy_attacking and time >= self.heavy_damage_inflict_time):
@@ -335,9 +355,12 @@ class DroneManagement(Node):
             self.damage_pub.publish(damage_message)
             self.heavy_damage_inflict_time = self.max_time + 100000
             if self.color:
-                setLEDColor(self.groupState.crazyflies[1], 0, 0, 0)
-                setLEDColor(self.groupState.crazyflies[2], 0, 0, 0)
-                setLEDColor(self.groupState.crazyflies[3], 0, 0, 0)
+                self.crazyflies[1].setLEDColor(0, 0, 0)
+                self.crazyflies[2].setLEDColor(0, 0, 0)
+                self.crazyflies[3].setLEDColor(0, 0, 0)
+                # setLEDColor(self.groupState.crazyflies[1], 0, 0, 0)
+                # setLEDColor(self.groupState.crazyflies[2], 0, 0, 0)
+                # setLEDColor(self.groupState.crazyflies[3], 0, 0, 0)
         if (self.heavy_attacking and time >= self.heavy_attack_end_time):  # Reset heavy attack
             print("Heavy attack drones returned!")
             self.heavy_attacking = False
