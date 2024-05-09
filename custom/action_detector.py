@@ -209,7 +209,7 @@ class ActionDetector:
             if fitsCriteria:
 
                 message = "frame 0" + "~" + str(framesToEvaluate) + " " + detectorName
-                #  print(message)
+                print(message)
                 return detectorName
 
                 #  if detectorName == "detectLowerWand":
