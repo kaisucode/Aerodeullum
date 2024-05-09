@@ -47,7 +47,7 @@ class DroneManagement(Node):
         self.heavy_attack_flag = False
         self.groupState = groupState
         #  self.max_game_duration = 4 * 60 # set in main instead
-        self.color = False
+        self.color = True
 
         # load trajectories based on csv files, and upload to the drones
         # key: numeric id, value: trajectory
@@ -175,7 +175,7 @@ class DroneManagement(Node):
             print("Attack blocked!")
 
     def shield(self, time):
-        print("trying to cast shield")
+        # print("trying to cast shield")
         if self.familiar_status == 0 or self.staggered or time < self.staggered:
             print("could not cast shield, status: ", self.familiar_status, " staggered: ", self.staggered)
             return False
@@ -188,11 +188,10 @@ class DroneManagement(Node):
         return True
 
     def quick_attack(self, time):
-        print("trying to cast quick attack")
+        # print("trying to cast quick attack")
         self.quick_attack_flag = False
         # select available drone
         self.quick_attack_drones = np.where(self.status == 1)[0]
-        print("quick attack drones ", self.quick_attack_drones)
         if len(self.quick_attack_drones) < 1 or self.heavy_attacking:
             print("Error: not enough drones available", self.status, ", ", self.heavy_attacking, "len: ", len(self.quick_attack_drones))
         else:
@@ -205,11 +204,10 @@ class DroneManagement(Node):
             self.quick_damage_inflict_time = time + self.quick_damage_duration
 
     def heavy_attack(self, time):
-        print("trying to cast heavy attack")
+        # print("trying to cast heavy attack")
         self.heavy_attack_flag = False
         # select available drone
         self.heavy_attack_drones = np.where(self.status == 1)[0]
-        print("heavy attack drones ", self.heavy_attack_drones)
         if len(self.heavy_attack_drones) < 3 or self.quick_attacking:
             # Error, not enough drones
             print("Error: not enough drones available", self.status, ", ", self.quick_attacking, "len: ", len(self.heavy_attack_drones))
