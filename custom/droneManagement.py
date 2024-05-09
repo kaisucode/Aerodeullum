@@ -301,7 +301,7 @@ class DroneManagement(Node):
             damage_message = Int32()
             damage_message.data = self.quick_attack_damage
             self.damage_pub.publish(damage_message)
-            self.quick_damage_inflict_time = self.max_time + 10
+            self.quick_damage_inflict_time = self.max_time + 10000
         if (self.quick_attacking and time >= self.quick_attack_end_time):  
             print("Quick attack drones returned!")
             # Reset quick attack 
@@ -318,7 +318,7 @@ class DroneManagement(Node):
             damage_message = Int32()
             damage_message.data = self.heavy_attack_damage
             self.damage_pub.publish(damage_message)
-            self.heavy_damage_inflict_time = self.max_time + 10
+            self.heavy_damage_inflict_time = self.max_time + 100000
         if (self.heavy_attacking and time >= self.heavy_attack_end_time):  # Reset heavy attack
             print("Heavy attack drones returned!")
             self.heavy_attacking = False
