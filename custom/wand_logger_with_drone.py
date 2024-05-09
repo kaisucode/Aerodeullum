@@ -66,7 +66,7 @@ def euler_from_quaternion(x, y, z, w):
 class WandFollower(Node):
 
     def __init__(
-            self, allcfs, timeHelper, max_time, curSide="sideA", max_speed=0.5, update_frequency=10, player=1
+            self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=10, player=1, oneDrone=False
     ):
         super().__init__("wand_follower_node" + str(player))
         self.player = player
@@ -88,6 +88,8 @@ class WandFollower(Node):
         self.rotationQueue = []
         self.actionDetector = ActionDetector(shouldFlip=(self.player != 1))
         self.curAttack = 1
+
+        self.oneDrone = oneDrone
 
         #  self.pub = self.create_publisher(String, 'spell' + str(self.player), 10)
 
@@ -147,17 +149,24 @@ class WandFollower(Node):
 
             if action == "detectRotateSide": 
                 trajId, traj = self.getTrajectory("p1" + "single_shield")
+                droneIdx = 0
                 self.allcfs.crazyflies[0].startTrajectory(trajId, 1.0, False)
             elif action == "detectFastAttack": 
                 trajId, traj = self.getTrajectory("p1" + "spiral")
                 attackDrone = self.curAttack % 3 + 1
                 self.curAttack += 1
-                self.allcfs.crazyflies[attackDrone].startTrajectory(trajId, 1.0, False)
+                if self.oneDrone: 
+                    attackDrone = 0
+                self.allcfs.crazyflies[attackDrone].startTrajectory(trajId, 2.0, False)
 
             elif action == "detectChargedAttack": 
                 trajId, traj = self.getTrajectory("p1" + "helix4")
-                for i in range(1, 4): 
-                    self.allcfs.crazyflies[i].startTrajectory(trajId, 1.0, False)
+                if self.oneDrone: 
+                    attackDrone = 0
+                    self.allcfs.crazyflies[attackDrone].startTrajectory(trajId, 1.0, False)
+                else: 
+                    for i in range(1, 4): 
+                        self.allcfs.crazyflies[i].startTrajectory(trajId, 1.0, False)
             timeHelper.sleep(2)
             gestureLock = False
 
@@ -224,7 +233,7 @@ if __name__ == "__main__":
         timeHelper = swarm.timeHelper
         allcfs = swarm.allcfs
 
-        wand_node = WandFollower(allcfs, timeHelper, 1)
+        wand_node = WandFollower(allcfs, timeHelper, 1, oneDrone=True)
 
         timeHelper.sleep(5)
         # takeoff all drones
