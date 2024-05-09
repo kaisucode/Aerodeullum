@@ -4,6 +4,7 @@ from rclpy.node import Node
 import rclpy
 from crazyflie_py import Crazyswarm
 from std_msgs.msg import String
+import time
 
 # from sensor_msgs.msg import Joy
 #from pathlib import Path
@@ -47,7 +48,7 @@ def euler_from_quaternion(x, y, z, w):
 class WandFollower(Node):
 
     def __init__(
-            self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=10, player=1
+            self, allcfs, timeHelper, max_time, curSide="sideA", max_speed=0.5, update_frequency=10, player=1
     ):
         super().__init__("wand_follower_node" + str(player))
         self.player = player
@@ -57,6 +58,7 @@ class WandFollower(Node):
         # self.controller = PDController(10, 0)
         self.allcfs = allcfs
         self.timeHelper = timeHelper
+        self.max_time = max_time
 
         self.curSide = curSide
         self.position_subscriber = self.create_subscription(
@@ -71,6 +73,9 @@ class WandFollower(Node):
         self.pub = self.create_publisher(String, 'spell' + str(self.player), 10)
 
     def timer_cb(self):
+        if time.time() > self.max_time:
+            self.destroy_node()
+
         # Get state of wand
         wand_position, wand_rotation = self.wand_pose
 

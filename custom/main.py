@@ -35,12 +35,18 @@ def main():
         timeHelper = swarm.timeHelper
 
         groupState = SimpleNamespace(crazyflies=crazyflies, timeHelper=timeHelper)
+
+    print("Taking off") 
+    takeoff(groupState, 1.0, 3)
+    timeHelper.sleep(3.0)
+
+    max_time = time.time() + 120
     _exec = rclpy.executors.MultiThreadedExecutor()
     print("Setting up game, multiplayer is ", ("on" if multiplayer else "off"))
     # Create groups for each player's drones
     p1_crazyflies = SimpleNamespace(crazyflies=crazyflies[0:4], timeHelper=timeHelper)
     # Start Wand Follower Nodes
-    p1_wand_node = WandFollower(p1_crazyflies, timeHelper, player=1)
+    p1_wand_node = WandFollower(p1_crazyflies, timeHelper, max_time=max_time, player=1)
     # Start Drone Management Nodes
     p1_dm = DroneManagement(p1_crazyflies, player=1)
     if multiplayer:
@@ -49,10 +55,6 @@ def main():
         )
         p2_wand_node = WandFollower(p2_crazyflies, timeHelper, player=2)
         p2_dm = DroneManagement(p2_crazyflies, player=2)
-
-    print("Taking off") 
-    takeoff(groupState, 1.0, 3)
-    timeHelper.sleep(3.0)
 
     print("Going to start positions")
     for idx in range(4):
@@ -63,7 +65,6 @@ def main():
     # Game loop
     p1 = True
     p2 = True
-    max_time = time.time() + 120
     print("Starting game loop")
     _exec.add_node(p1_wand_node)
     _exec.add_node(p1_dm)
