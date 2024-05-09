@@ -10,8 +10,6 @@ import time
 from pathlib import Path
 from crazyflie_py.uav_trajectory import Trajectory
 
-
-
 dronePositions = [
     [[-4, 2, 1], [-3, -2, 1], [-3, -1.5, 1.5], [-3, -1, 1]],
     [[4, -1.5, 1], [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1]],
@@ -44,10 +42,14 @@ class DroneManagement(Node):
         self.status = np.ones(3)  # 0 is available, 1 is busy
         self.shield_flag = False
         self.quick_attack_flag = False
+        self.quick_attack_flags = np.zeros(3)
         self.heavy_attack_flag = False
         self.groupState = groupState
         #  self.max_game_duration = 4 * 60 # set in main instead
-        self.color = True
+        # If color changes should be active
+        self.color = False
+        # If simple trajectories should be used - for real robots 
+        self.simple = True
 
         # load trajectories based on csv files, and upload to the drones
         # key: numeric id, value: trajectory
@@ -200,8 +202,12 @@ class DroneManagement(Node):
             )  # TODO pass in specific quick attack drone
             self.quick_attacking = True
             self.status[self.quick_attack_drones[0]] = 0
-            self.quick_attack_end_time = time + self.quick_attack_duration
-            self.quick_damage_inflict_time = time + self.quick_damage_duration
+            if self.simple:
+                self.quick_attack_end_time = time + self.simple_attack_duration
+                self.quick_damage_inflict_time = time + self.simple_damage_duration
+            else:
+                self.quick_attack_end_time = time + self.quick_attack_duration
+                self.quick_damage_inflict_time = time + self.quick_damage_duration
 
     def heavy_attack(self, time):
         # print("trying to cast heavy attack")
@@ -216,8 +222,12 @@ class DroneManagement(Node):
             self.heavy_attacking = True
             for drone in self.heavy_attack_drones:
                 self.status[drone] = 0
-            self.heavy_attack_end_time = time + self.heavy_attack_duration
-            self.heavy_damage_inflict_time = time + self.heavy_damage_duration
+            if self.simple:
+                self.heavy_attack_end_time = time + self.simple_attack_duration
+                self.heavy_damage_inflict_time = time + self.simple_damage_duration
+            else:
+                self.heavy_attack_end_time = time + self.heavy_attack_duration
+                self.heavy_damage_inflict_time = time + self.heavy_damage_duration
 
     # Trigger shield movement behavior
     def cast_shield(self, groupState):
