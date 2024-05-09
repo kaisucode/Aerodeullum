@@ -266,7 +266,7 @@ class DroneManagement(Node):
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[quick_attack_drone + 1].setLEDColor(*rgb)
         if self.simple:
-            groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 10.0, False) #for simple attack
+            groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 1.0, False) #for simple attack
         else:
             groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 1.0, False)
         return
@@ -295,9 +295,9 @@ class DroneManagement(Node):
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[3].setLEDColor(*rgb)
         if self.simple:
-            groupState.crazyflies[1].startTrajectory(trajId, 10.0, False) #for simple attack
-            groupState.crazyflies[2].startTrajectory(trajId, 10.0, False) #for simple attack
-            groupState.crazyflies[3].startTrajectory(trajId, 10.0, False) #for simple attack
+            groupState.crazyflies[1].startTrajectory(trajId, 1.5, False) #for simple attack
+            groupState.crazyflies[2].startTrajectory(trajId, 1.5, False) #for simple attack
+            groupState.crazyflies[3].startTrajectory(trajId, 1.5, False) #for simple attack
         else:
             groupState.crazyflies[1].startTrajectory(trajId1, 1.0, False)
             groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
