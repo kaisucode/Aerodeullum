@@ -66,6 +66,10 @@ class DroneManagement(Node):
         self.stagger_duration = 3
         self.quick_attack_duration = 5
         self.heavy_attack_duration = 10
+        # Durations of attack parts of spells without return time
+        self.quick_damage_duration = 7#.1
+        self.heavy_damage_duration = 12#.4
+
 
         # Compute actual trajectory durations
         self.shield_duration = self.trajectoryFilemapping["p1_single_shield"]["trajectory"].duration
@@ -92,6 +96,8 @@ class DroneManagement(Node):
         self.quick_attack_end_time = 0
         self.heavy_attack_end_time = 0
         self.stagger_end_time = 0
+        self.quick_damage_inflict_time = 0
+        self.heavy_damage_inflict_time = 0
 
         # Create publishers
         # self.damage_pub = rospy.Publisher("damage" + self.player, Int32, queue_size=10)
@@ -195,6 +201,7 @@ class DroneManagement(Node):
             self.quick_attacking = True
             self.status[self.quick_attack_drones[0]] = 0
             self.quick_attack_end_time = time + self.quick_attack_duration
+            self.quick_damage_inflict_time = time + self.quick_damage_duration
 
     def heavy_attack(self, time):
         print("trying to cast heavy attack")
@@ -211,6 +218,7 @@ class DroneManagement(Node):
             for drone in self.heavy_attack_drones:
                 self.status[drone] = 0
             self.heavy_attack_end_time = time + self.heavy_attack_duration
+            self.heavy_damage_inflict_time = time + self.heavy_damage_duration
 
     # Trigger shield movement behavior
     def cast_shield(self, groupState):
@@ -273,6 +281,7 @@ class DroneManagement(Node):
             self.familiar_status = 1
         if self.staggered and time >= self.stagger_end_time:  # Reset stagger
             print("Stagger Finished")
+            self.stagger_end_time = 0
             self.staggered = False
 
         # Handle Quick Attacks
@@ -280,13 +289,14 @@ class DroneManagement(Node):
         if self.quick_attack_flag == True:  # Cast Quick Attack
             # start quick attack  movement and set timer for shield to sleep
             self.quick_attack(time)
-        if (
-            self.quick_attacking and time >= self.quick_attack_end_time
-        ):  # Reset quick attack 
-            print("Quick attack finished")
+        if (self.quick_attacking and time >= self.quick_damage_inflict_time):
+            print("Quick attacked!")
             damage_message = Int32()
             damage_message.data = self.quick_attack_damage
             self.damage_pub.publish(damage_message)
+        if (self.quick_attacking and time >= self.quick_attack_end_time):  
+            print("Quick attack drones returned!")
+            # Reset quick attack 
             self.quick_attacking = False
             self.status[self.quick_attack_drones[0]] = 1
             self.quick_attack_drones = []
@@ -295,13 +305,13 @@ class DroneManagement(Node):
         if self.heavy_attack_flag == True:  # Cast Quick Attack
             # start quick attack  movement and set timer for shield to sleep
             self.heavy_attack(time)
-        if (
-            self.heavy_attacking and time >= self.heavy_attack_end_time
-        ):  # Reset heavy attack
+        if (self.heavy_attacking and time >= self.heavy_damage_inflict_time):
             print("Heavy attack finished")
             damage_message = Int32()
             damage_message.data = self.heavy_attack_damage
             self.damage_pub.publish(damage_message)
+        if (self.heavy_attacking and time >= self.heavy_attack_end_time):  # Reset heavy attack
+            print("Heavy attack drones returned!")
             self.heavy_attacking = False
             for drone in self.heavy_attack_drones:
                 self.status[drone] = 1

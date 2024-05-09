@@ -89,7 +89,7 @@ class WandFollower(Node):
             msg = String()
             msg.data = action
             self.pub.publish(msg)
-            self.get_logger().info('Publishing: "%s"' % msg.data)
+            # self.get_logger().info('Publishing: "%s"' % msg.data)
 
             return
             print(action)
