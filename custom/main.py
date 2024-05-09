@@ -40,7 +40,7 @@ def main():
     takeoff(groupState, 1.0, 3)
     timeHelper.sleep(3.0)
 
-    max_time = time.time() + 120
+    max_time = time.time() + 240
     _exec = rclpy.executors.MultiThreadedExecutor()
     print("Setting up game, multiplayer is ", ("on" if multiplayer else "off"))
     # Create groups for each player's drones
@@ -58,9 +58,9 @@ def main():
 
     print("Going to start positions")
     for idx in range(4):
-        p1_dm.initialize_drone_position(p1_dm.groupState, idx, 1)
+        p1_dm.initialize_drone_position(p1_dm.groupState, idx, 1, max_time)
         if multiplayer:
-            p2_dm.initialize_drone_position(p2_dm.groupState, idx, 2)
+            p2_dm.initialize_drone_position(p2_dm.groupState, idx, 2, max_time)
 
     # Game loop
     p1 = True

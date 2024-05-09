@@ -46,7 +46,7 @@ class DroneManagement(Node):
         self.quick_attack_flag = False
         self.heavy_attack_flag = False
         self.groupState = groupState
-        self.max_game_duration = 4 * 60
+        #  self.max_game_duration = 4 * 60 # set in main instead
         self.color = False
 
         # load trajectories based on csv files, and upload to the drones
@@ -268,13 +268,13 @@ class DroneManagement(Node):
         groupState.crazyflies[0].startTrajectory(trajId, 1.0, False)
         return
 
-    def initialize_drone_position(self, groupState, droneIndex, player):
+    def initialize_drone_position(self, groupState, droneIndex, player, max_time):
         side = player - 1
         groupState.crazyflies[droneIndex].goTo(
             np.asarray(dronePositions[side][droneIndex]), 0, 1.0
         )
         groupState.timeHelper.sleep(3)
-        self.max_time = time.time() + self.max_game_duration
+        self.max_time = max_time 
 
     def handle_player(self, time):
         # Handle losing
