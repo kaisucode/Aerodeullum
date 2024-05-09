@@ -70,8 +70,11 @@ def main():
     _exec.add_node(p1_dm)
     _exec.add_node(p2_wand_node)
     _exec.add_node(p2_dm)
-    _exec.spin()
-    print("Shutting Down")
+    try:
+        _exec.spin()
+    finally:
+        print("Shutting Down")
+        _exec.shutdown()
 
     print("Landing Drones")
     land(groupState, 0.01, 3)

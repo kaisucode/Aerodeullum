@@ -128,9 +128,13 @@ class DroneManagement(Node):
         self.handle_player(curr_time)
         if self.hp <= 0:
             print("Game over: " + ("player 1 " if self.player == 2 else "player 2 ") + "wins!")
+            land(self.groupState, 0.01, 3)
+            self.timeHelper.sleep(3.0)
             self.destroy_node()
         if curr_time > self.max_time:
             print("Game over: time exceeded")
+            land(self.groupState, 0.01, 3)
+            self.timeHelper.sleep(3.0)
             self.destroy_node()
 
 
@@ -326,10 +330,14 @@ class DroneManagement(Node):
         if self.hp <= 0:
             print("player " + str(self.player) + " loses")
             print("Game over: " + ("player 1 " if self.player == 2 else "player 2 ") + "wins!")
+            land(self.groupState, 0.01, 3)
+            self.timeHelper.sleep(3.0)
             self.destroy_node()
             return False
         if time >= self.max_time:
             print("Game over: time exceeded")
+            land(self.groupState, 0.01, 3)
+            self.timeHelper.sleep(3.0)
             self.destroy_node()
             return False
 
