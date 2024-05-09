@@ -158,13 +158,13 @@ class WandFollower(Node):
 
             if action == "detectRotateSide": 
                 #  trajId, traj = self.getTrajectory("p1" + "single_shield")
-                executeTraj(0, "single_shield")
+                self.executeTraj(0, "single_shield")
             elif action == "detectFastAttack": 
                 attackDrone = self.curAttack % 3 + 1
                 self.curAttack += 1
                 if self.oneDrone: 
                     attackDrone = 0
-                executeTraj(attackDrone, "spiral")
+                self.executeTraj(attackDrone, "spiral")
 
             #  elif action == "detectChargedAttack": 
             #      trajId, traj = self.getTrajectory("p1" + "helix4")
