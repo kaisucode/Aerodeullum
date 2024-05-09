@@ -15,7 +15,7 @@ dronePositions = [
     [[4, -1.5, 1], [3, 2.5, 1], [3, 2, 1.5], [3, 1.5, 1]],
 ]
 
-trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield"]
+trajectoryNames = ["spiral", "helix1", "helix2", "helix3", "familiar", "single_shield", "straight"]
 
 def loadTrajectories():
     trajectoryFilemapping = {}  # {"name": {"trajectory", "id"}}
@@ -81,7 +81,8 @@ class DroneManagement(Node):
                                            self.trajectoryFilemapping["p1_helix2"]["trajectory"].duration,
                                            self.trajectoryFilemapping["p1_helix3"]["trajectory"].duration])
         self.stagger_duration = self.trajectoryFilemapping["p1_familiar"]["trajectory"].duration
-        
+        self.straight_duration = 10 * self.trajectoryFilemapping["p1_straight"]["trajectory"].duration
+
         # Gameplay statistics 
         self.hp = 100
         self.quick_attack_damage = 10
@@ -249,12 +250,14 @@ class DroneManagement(Node):
         print("Triggering quick attack motion")
         player_prefix = "p" + str(self.player) + "_"
         trajId, traj = self.getTrajectory(player_prefix + "spiral")
+        #trajId, traj = self.getTrajectory(player_prefix + "straight") #for simple attack
         if self.color:
             # setLEDColorFromHex(groupState.crazyflies[quick_attack_drone + 1], "#7f00ff") #violet
             hex = "#7f00ff" #violet
             rgb = ImageColor.getcolor(hex, "RGB")
             self.crazyflies[quick_attack_drone + 1].setLEDColor(*rgb)
         groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 1.0, False)
+        #groupState.crazyflies[quick_attack_drone + 1].startTrajectory(trajId, 10.0, False) #for simple attack
         return
 
     # Trigger quick_attack movement behavior
@@ -264,6 +267,7 @@ class DroneManagement(Node):
         trajId1, traj = self.getTrajectory(player_prefix + "helix1")
         trajId2, traj = self.getTrajectory(player_prefix + "helix2")
         trajId3, traj = self.getTrajectory(player_prefix + "helix3")
+        #trajId, traj = self.getTrajectory(player_prefix + "straight") #for simple attack
         if self.color:
             #setLEDColorFromHex(groupState.crazyflies[1], "#ed2938") #red
             #setLEDColorFromHex(groupState.crazyflies[2], "#ff8c01") #orange
@@ -280,6 +284,9 @@ class DroneManagement(Node):
         groupState.crazyflies[1].startTrajectory(trajId1, 1.0, False)
         groupState.crazyflies[2].startTrajectory(trajId2, 1.0, False)
         groupState.crazyflies[3].startTrajectory(trajId3, 1.0, False)
+        #groupState.crazyflies[1].startTrajectory(trajId, 10.0, False) #for simple attack
+        #groupState.crazyflies[2].startTrajectory(trajId, 10.0, False) #for simple attack
+        #groupState.crazyflies[3].startTrajectory(trajId, 10.0, False) #for simple attack
         return
 
     def cast_stagger(self, groupState):
