@@ -1,15 +1,23 @@
 import numpy as np
+import rclpy.callback_groups
 from tf2_msgs.msg import TFMessage
 from rclpy.node import Node
 import rclpy
 from crazyflie_py import Crazyswarm
 from std_msgs.msg import String
 import time
+from crazyflie_py.uav_trajectory import Trajectory
+
+
+import numpy as np
+from pathlib import Path
+
+from crazyflie_py import *
 
 # from sensor_msgs.msg import Joy
-#from pathlib import Path
-#from crazyflie_py.uav_trajectory import Trajectory
-#from rclpy.executors import MultiThreadedExecutor
+# from pathlib import Path
+# from crazyflie_py.uav_trajectory import Trajectory
+# from rclpy.executors import MultiThreadedExecutor
 
 
 # import rospy
@@ -31,17 +39,20 @@ dronePositions = [
 #  trajectoryNames = ["spiral", "helix4", "familiar", "single_shield", "simple"]
 trajectoryNames = ["spiral", "helix4", "familiar", "single_shield"]
 
+
 def loadTrajectories():
     trajectoryFilemapping = {}  # {"name": {"trajectory", "id"}}
     trajId = 0
     for fileprefix in trajectoryNames:
-        
-        #  for player in ["p1_", "p2_"]: 
-        for player in ["p1_"]: 
+
+        #  for player in ["p1_", "p2_"]:
+        for player in ["p1_"]:
             trajName = player + fileprefix
             trajectoryFilemapping[trajName] = {"id": trajId, "trajectory": Trajectory()}
             filename = "aero/" + trajName + ".csv"
-            trajectoryFilemapping[trajName]["trajectory"].loadcsv(Path(__file__).parent / filename)
+            trajectoryFilemapping[trajName]["trajectory"].loadcsv(
+                Path(__file__).parent / filename
+            )
             trajId += 1
             time.sleep(0.5)
     return trajectoryFilemapping
@@ -64,10 +75,18 @@ def euler_from_quaternion(x, y, z, w):
     # return roll_x, pitch_y, yaw_z # in radians
     return math.degrees(roll_x), math.degrees(pitch_y), math.degrees(yaw_z)
 
+
 class WandFollower(Node):
 
     def __init__(
-            self, allcfs, timeHelper, curSide="sideA", max_speed=0.5, update_frequency=10, player=1, oneDrone=False
+        self,
+        allcfs,
+        timeHelper,
+        curSide="sideA",
+        max_speed=0.5,
+        update_frequency=10,
+        player=1,
+        oneDrone=False,
     ):
         super().__init__("wand_follower_node" + str(player))
         self.player = player
@@ -77,13 +96,20 @@ class WandFollower(Node):
         # self.controller = PDController(10, 0)
         self.allcfs = allcfs
         self.timeHelper = timeHelper
-        self.max_time = max_time
 
         self.curSide = curSide
         self.position_subscriber = self.create_subscription(
             TFMessage, "tf", self.pose_callback, 1
         )
-        self.call_timer = self.create_timer(1 / self.Hz, self.timer_cb)
+        self.call_timer = self.create_timer(
+            1 / self.Hz,
+            self.timer_cb,
+            callback_group=rclpy.callback_groups.ReentrantCallbackGroup(),
+        )
+        self.call_timer2 = self.create_timer(1 / self.Hz, self.timer_cb2)
+
+        # self.call_timer2 = self.create_timer(1 / self.Hz, self.timer_cb)
+
         self.maxQueueSize = 50
         self.positionQueue = []
         self.rotationQueue = []
@@ -91,10 +117,12 @@ class WandFollower(Node):
         self.curAttack = 1
 
         self.oneDrone = oneDrone
+        self.queuedAction = "single_shield"
 
         #  self.pub = self.create_publisher(String, 'spell' + str(self.player), 10)
 
         self.gestureLock = False
+        self.lastValidTimestamp = time.time()
         self.trajectoryFilemapping = loadTrajectories()
         #  for cf in self.allcfs.crazyflies:
         #      for fileprefix in self.trajectoryFilemapping:
@@ -107,7 +135,6 @@ class WandFollower(Node):
         #          )
         #          timeHelper.sleep(1)
 
-
     def getTrajectory(self, trajName):
         return (
             self.trajectoryFilemapping[trajName]["id"],
@@ -119,22 +146,58 @@ class WandFollower(Node):
         self.allcfs.crazyflies[droneIndex].goTo(
             np.asarray(dronePositions[side][droneIndex]), 0, 3.0
         )
-        self.groupState.timeHelper.sleep(3)
+        self.timeHelper.sleep(3)
 
-    def executeTraj(self, droneId, trajName): 
-        trajId, traj = self.getTrajectory("p1" + trajName)
+    def executeTraj(self, droneId, trajName):
+        trajId, traj = self.getTrajectory("p1_" + trajName)
         self.allcfs.crazyflies[droneId].uploadTrajectory(trajId, 0, traj)
         timeHelper.sleep(2)
         self.allcfs.crazyflies[droneId].startTrajectory(trajId, 1.0, False)
-        self.timeHelper.sleep(traj.duration())
+        self.timeHelper.sleep(traj.duration + 0.5)
+        self.initialize_drone_position(droneId, 1)
+        print("done executing trajectory ", trajName)
 
+    def timer_cb2(self):
+        action = self.queuedAction
+        print("============================ called but no action maybe ", action)
+        if action != None:
+
+            # if self.gestureLock == False:
+            #     self.gestureLock = True
+            # else:
+            #     return
+
+            print("using action: ", action)
+
+            if action == "detectRotateSide" or action == "detectChargedAttack":
+                #  trajId, traj = self.getTrajectory("p1" + "single_shield")
+                self.executeTraj(0, "single_shield")
+            elif action == "detectFastAttack":
+                attackDrone = self.curAttack % 3 + 1
+                self.curAttack += 1
+                if self.oneDrone:
+                    attackDrone = 0
+                self.executeTraj(attackDrone, "spiral")
+
+            #  elif action == "detectChargedAttack":
+            #      trajId, traj = self.getTrajectory("p1" + "helix4")
+            #      if self.oneDrone:
+            #          attackDrone = 0
+            #          self.allcfs.crazyflies[attackDrone].startTrajectory(trajId, 1.0, False)
+            #      else:
+            #          for i in range(1, 4):
+            #              self.allcfs.crazyflies[i].startTrajectory(trajId, 1.0, False)
+            action = None
+            # timeHelper.sleep(2)
+            # self.gestureLock = False
 
     def timer_cb(self):
         #  if time.time() > self.max_time:
         #      self.destroy_node()
 
         # Get state of wand
-        if gestureLock == True: 
+        if self.gestureLock == True:
+            print("gesture locked")
             return
         wand_position, wand_rotation = self.wand_pose
 
@@ -147,47 +210,19 @@ class WandFollower(Node):
         firstNRotations = np.asarray(self.rotationQueue[-self.maxQueueSize :])
 
         action = self.actionDetector.getAction(firstNPositions, firstNRotations)
-        if action != None:
+        self.queuedAction = action
 
-            if gestureLock == False: 
-                gestureLock = True
-            else: 
-                return
+        # get action
+        #  msg = String()
+        #  msg.data = action
+        #  self.pub.publish(msg)
+        # self.get_logger().info('Publishing: "%s"' % msg.data)
 
-            print("using action: ", action)
-
-            if action == "detectRotateSide": 
-                #  trajId, traj = self.getTrajectory("p1" + "single_shield")
-                self.executeTraj(0, "single_shield")
-            elif action == "detectFastAttack": 
-                attackDrone = self.curAttack % 3 + 1
-                self.curAttack += 1
-                if self.oneDrone: 
-                    attackDrone = 0
-                self.executeTraj(attackDrone, "spiral")
-
-            #  elif action == "detectChargedAttack": 
-            #      trajId, traj = self.getTrajectory("p1" + "helix4")
-            #      if self.oneDrone: 
-            #          attackDrone = 0
-            #          self.allcfs.crazyflies[attackDrone].startTrajectory(trajId, 1.0, False)
-            #      else: 
-            #          for i in range(1, 4): 
-            #              self.allcfs.crazyflies[i].startTrajectory(trajId, 1.0, False)
-            timeHelper.sleep(2)
-            gestureLock = False
-
-            # get action
-            #  msg = String()
-            #  msg.data = action
-            #  self.pub.publish(msg)
-            # self.get_logger().info('Publishing: "%s"' % msg.data)
-
-            return
-            print(action)
-            # rospy.loginfo(action)
-            # self.pub.publish(action)
-            # self.rate.sleep()
+        return
+        print(action)
+        # rospy.loginfo(action)
+        # self.pub.publish(action)
+        # self.rate.sleep()
         return
 
     def pose_callback(self, msg):
@@ -199,12 +234,12 @@ class WandFollower(Node):
         # Loop through all transforms (for all objects/crazyflies)
         for transform in msg.transforms:
             # Find the transform named "wand"
-            childFrame = "wand"
             childFrame = "tfaeropurple" if self.player == 1 else "tfaerobrown"
-            #  childFrame = "tf1aero"
+            childFrame = "tf1aero"
+            childFrame = "wand"
 
             if transform.child_frame_id == childFrame:
-            # if transform.child_frame_id == "wand":
+                # if transform.child_frame_id == "wand":
                 # position (x, y, z)
                 position = np.array(
                     [
@@ -242,15 +277,18 @@ if __name__ == "__main__":
 
         wand_node = WandFollower(allcfs, timeHelper, 1, oneDrone=True)
 
-        timeHelper.sleep(5)
+        timeHelper.sleep(3)
         # takeoff all drones
+        print("taking off")
         allcfs.takeoff(targetHeight=1.0, duration=3.0)
         timeHelper.sleep(2)
 
-        if haveDrones
+        if haveDrones:
             print("Going to start positions")
-            for idx in range(4):
-                wand_node.initialize_drone_position(idx, 1)
+            wand_node.initialize_drone_position(0, 1)
+
+            # for idx in range(4):
+            #     wand_node.initialize_drone_position(idx, 1)
 
         rclpy.spin(wand_node)
 
@@ -263,7 +301,6 @@ if __name__ == "__main__":
 
     # wand_node = WandFollower(allcfs, timeHelper, "sideA")
     wand_node = WandFollower(allcfs, timeHelper, 1)
-
 
     # executor = rclpy.Executor()
     # executor = MultiThreadedExecutor(num_threads=2)
