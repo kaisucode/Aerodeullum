@@ -152,8 +152,8 @@ class DroneManagement(Node):
         if msg.data == "detectRotateSide":  # defend
             # If familiar is available, set defense spell flag to be triggered in loop
             if self.familiar_status == 1 and not self.shielding and not self.staggered:
-                self.defense_flag = True
-
+                print("shield command received")
+                self.shield_flag = True
         elif msg.data == "detectFastAttack":  # quick attack
             # If a spell drone is available, set quick attack flag to be triggered in main loop
             if sum(self.status[:]) >= 1 and not self.quick_attacking and not self.heavy_attacking and not self.heavy_attack_flag:
@@ -185,7 +185,7 @@ class DroneManagement(Node):
             print("Attack blocked!")
 
     def shield(self, time):
-        # print("trying to cast shield")
+        print("trying to cast shield")
         if self.familiar_status == 0 or self.staggered or time < self.staggered:
             print("could not cast shield, status: ", self.familiar_status, " staggered: ", self.staggered)
             return False
@@ -273,6 +273,8 @@ class DroneManagement(Node):
 
     # Trigger quick_attack movement behavior
     def cast_heavy_attack(self, groupState):
+        if self.quick_attacking:
+            return
         print("Triggering heavy attack motion")
         player_prefix = "p" + str(self.player) + "_"
         if self.simple:
